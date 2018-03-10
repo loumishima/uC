@@ -1,0 +1,594 @@
+MPASM  5.51                      SEMAFORO.ASM   9-7-2017  11:10:47         PAGE  1
+
+
+LOC  OBJECT CODE     LINE SOURCE TEXT
+  VALUE
+
+                      00001 ;* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+                      00002 ;*              MODIFICAÇÕES PARA USO COM 12F675                   *
+                      00003 ;*                FEITAS PELO PROF. MARDSON                        *
+                      00004 ;*                    FEVEREIRO DE 2016                            *
+                      00005 ;* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+                      00006 
+                      00007 ;* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+                      00008 ;*                                      ATIVIDADE 1 - PARTE 3                                           
+                               *
+                      00009 ;*                                      LUIZ HENRIQUE RODRIGUES                                         
+                               *
+                      00010 ;*                                      SEMAFORO USANDO TMR0                                            
+                               *
+                      00011 ;*                      OBJETIVO: CONTROLAR 2 SEMAFOROS COM 5 PORTAS               *
+                      00012 ;*                   DELAY DE 2 S PARA SINAL VERDE E .5 PARA AMARELO       *
+                      00013 ;* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+                      00014 
+                      00015 ;* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+                      00016 ;*                       NOME DO PROJETO                           *
+                      00017 ;*                           CLIENTE                               *
+                      00018 ;*         DESENVOLVIDO PELA MOSAICO ENGENHARIA E CONSULTORIA      *
+                      00019 ;*   VERSÃO: 1.0                           DATA: 17/06/03          *
+                      00020 ;* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+                      00021 ;*                     DESCRIÇÃO DO ARQUIVO                        *
+                      00022 ;*-----------------------------------------------------------------*
+                      00023 ;*   MODELO PARA O PIC 12F675                                      *
+                      00024 ;*                                                                 *
+                      00025 ;*                                                                 *
+                      00026 ;* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+                      00027 
+Error[150]  : Labels must be defined in a code or data section when making an object file
+0000                  00028 X;* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+                      00029 ;*                     ARQUIVOS DE DEFINIÇÕES                      *
+                      00030 ;* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+                      00031 #INCLUDE <P12F675.INC>  ;ARQUIVO PADRÃO MICROCHIP PARA 12F675
+                      00001         LIST
+                      00002 
+                      00003 ;==========================================================================
+                      00004 ;  MPASM PIC12F675 processor include
+                      00005 ; 
+                      00006 ;  (c) Copyright 1999-2013 Microchip Technology, All rights reserved
+                      00007 ;==========================================================================
+                      00008 
+                      00366         LIST
+                      00032 
+2007   3FA4           00033         __CONFIG _BODEN_OFF & _CP_OFF & _PWRTE_ON & _WDT_OFF & _MCLRE_ON & _INTRC_OSC_NOCLKOUT
+                      00034 
+                      00035 ;* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+                      00036 ;*                    PAGINAÇÃO DE MEMÓRIA                         *
+                      00037 ;* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+                      00038 ;DEFINIÇÃO DE COMANDOS DE USUÁRIO PARA ALTERAÇÃO DA PÁGINA DE MEMÓRIA
+                      00039 #DEFINE BANK0   BCF STATUS,RP0  ;SETA BANK 0 DE MEMÓRIA
+                      00040 #DEFINE BANK1   BSF STATUS,RP0  ;SETA BANK 1 DE MAMÓRIA
+MPASM  5.51                      SEMAFORO.ASM   9-7-2017  11:10:47         PAGE  2
+
+
+LOC  OBJECT CODE     LINE SOURCE TEXT
+  VALUE
+
+                      00041 
+                      00042 ;* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+                      00043 ;*                         VARIÁVEIS                               *
+                      00044 ;* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+                      00045 ; DEFINIÇÃO DOS NOMES E ENDEREÇOS DE TODAS AS VARIÁVEIS UTILIZADAS 
+                      00046 ; PELO SISTEMA
+                      00047 
+                      00048         CBLOCK  0x20    ;ENDEREÇO INICIAL DA MEMÓRIA DE
+                      00049                                         ;USUÁRIO
+  00000020            00050                 W_TEMP          ;REGISTRADORES TEMPORÁRIOS PARA USO
+  00000021            00051                 STATUS_TEMP     ;JUNTO ÀS INTERRUPÇÕES
+                      00052                 
+                      00053                 ;NOVAS VARIÁVEIS
+  00000022            00054                 AUX                     ;CONTADOR AUXILIAR
+                      00055 
+                      00056         ENDC                    ;FIM DO BLOCO DE MEMÓRIA
+                      00057 ;* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+                      00058 ;*                        FLAGS INTERNOS                           *
+                      00059 ;* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+                      00060 ; DEFINIÇÃO DE TODOS OS FLAGS UTILIZADOS PELO SISTEMA
+                      00061 
+                      00062 ;* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+                      00063 ;*                         CONSTANTES                              *
+                      00064 ;* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+                      00065 ; DEFINIÇÃO DE TODAS AS CONSTANTES UTILIZADAS PELO SISTEMA
+                      00066 
+  00000007            00067 PRE                     EQU             B'00000111' 
+  00000001            00068 PRE_T           EQU             B'00000001'     ;TESTE PARA VISUALIZAÇÃO
+                      00069 
+                      00070 ;* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+                      00071 ;*                           ENTRADAS                              *
+                      00072 ;* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+                      00073 ; DEFINIÇÃO DE TODOS OS PINOS QUE SERÃO UTILIZADOS COMO ENTRADA
+                      00074 ; RECOMENDAMOS TAMBÉM COMENTAR O SIGNIFICADO DE SEUS ESTADOS (0 E 1)
+                      00075 
+                      00076 ;* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+                      00077 ;*                           SAÍDAS                                *
+                      00078 ;* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+                      00079 ; DEFINIÇÃO DE TODOS OS PINOS QUE SERÃO UTILIZADOS COMO SAÍDA
+                      00080 ; RECOMENDAMOS TAMBÉM COMENTAR O SIGNIFICADO DE SEUS ESTADOS (0 E 1)
+                      00081 
+                      00082 ;FAROIS DO SEMAFOROS
+                      00083 
+                      00084 #DEFINE                 SEM_G1          GPIO,0  ;FAROL VERDE_1 & VERMELHO_2  (1 - ON / 0 - OFF)
+                      00085 #DEFINE                 SEM_Y1          GPIO,1  ;FAROL AMARELO 1(1- ON/ 0 - OFF)
+                      00086 
+                      00087 
+                      00088 #DEFINE                 SEM_G2          GPIO,4  ;FAROL VERDE_2 & VERMELHO_1  (1 - ON / 0 - OFF)
+                      00089 #DEFINE                 SEM_Y2          GPIO,5  ;FAROL AMARELO 2 (1- ON/ 0 - OFF)  
+                      00090 
+                      00091 ;* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+                      00092 ;*                       VETOR DE RESET                            *
+                      00093 ;* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+MPASM  5.51                      SEMAFORO.ASM   9-7-2017  11:10:47         PAGE  3
+
+
+LOC  OBJECT CODE     LINE SOURCE TEXT
+  VALUE
+
+                      00094 
+                      00095         ORG     0x00                    ;ENDEREÇO INICIAL DE PROCESSAMENTO
+0000   2???           00096         GOTO    INICIO
+                      00097         
+                      00098 ;* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+                      00099 ;*                    INÍCIO DA INTERRUPÇÃO                        *
+                      00100 ;* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+                      00101 ; ENDEREÇO DE DESVIO DAS INTERRUPÇÕES. A PRIMEIRA TAREFA É SALVAR OS
+                      00102 ; VALORES DE "W" E "STATUS" PARA RECUPERAÇÃO FUTURA
+                      00103 
+                      00104         ORG     0x04                    ;ENDEREÇO INICIAL DA INTERRUPÇÃO
+0004   00A0           00105         MOVWF   W_TEMP          ;COPIA W PARA W_TEMP
+0005   0E03           00106         SWAPF   STATUS,W
+0006   00A1           00107         MOVWF   STATUS_TEMP     ;COPIA STATUS PARA STATUS_TEMP
+                      00108 
+                      00109 ;* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+                      00110 ;*                    ROTINA DE INTERRUPÇÃO                        *
+                      00111 ;* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+                      00112 ; AQUI SERÁ ESCRITA AS ROTINAS DE RECONHECIMENTO E TRATAMENTO DAS
+                      00113 ; INTERRUPÇÕES
+                      00114 
+                      00115 ;* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+                      00116 ;*                 ROTINA DE SAÍDA DA INTERRUPÇÃO                  *
+                      00117 ;* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+                      00118 ; OS VALORES DE "W" E "STATUS" DEVEM SER RECUPERADOS ANTES DE 
+                      00119 ; RETORNAR DA INTERRUPÇÃO
+                      00120 
+0007                  00121 SAI_INT
+0007   0E21           00122         SWAPF   STATUS_TEMP,W
+0008   0083           00123         MOVWF   STATUS          ;MOVE STATUS_TEMP PARA STATUS
+0009   0EA0           00124         SWAPF   W_TEMP,F
+000A   0E20           00125         SWAPF   W_TEMP,W        ;MOVE W_TEMP PARA W
+000B   0009           00126         RETFIE
+                      00127 
+                      00128 ;* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+                      00129 ;*                       ROTINAS E SUBROTINAS                      *
+                      00130 ;* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+                      00131 ; CADA ROTINA OU SUBROTINA DEVE POSSUIR A DESCRIÇÃO DE FUNCIONAMENTO
+                      00132 ; E UM NOME COERENTE ÀS SUAS FUNÇÕES.
+                      00133 
+000C                  00134 LIMPA_T0FLAG                            ;RESPONSAVEL POR REINICIAR A CONTAGEM APOS O ESTOURO
+                      00135         
+                      00136         
+000C   110B           00137         BCF             INTCON,T0IF             ;LIMPA A FLAG
+000D   128B           00138         BCF             INTCON,T0IE             ;DESABILITA AS INTERRUPÇÕES (PREUCAÇÃO)
+                      00139 
+000E   0008           00140         RETURN
+                      00141 
+000F                  00142 SET_PRESCALER                           ;DEFINE O PADRÃO DE TEMPO DO TMR0
+                      00143         
+000F   1683           00144         BANK1                                   ;MUDA O BANCO
+                      00145 
+0010   3007           00146         MOVLW   PRE                             ;DEFINE O PRESCALER
+MPASM  5.51                      SEMAFORO.ASM   9-7-2017  11:10:47         PAGE  4
+
+
+LOC  OBJECT CODE     LINE SOURCE TEXT
+  VALUE
+
+Message[302]: Register in operand not in bank 0.  Ensure that bank bits are correct.
+0011   0081           00147         MOVWF   OPTION_REG
+                      00148 
+0012   1283           00149         BANK0                                   ;SEMPRE VOLTAR AO BANCO ANTERIOR
+                      00150         
+0013   0008           00151         RETURN
+0014                  00152 SET_LIGTHS                                      ;DEFINE O ESTADO DO SEMÁFORO
+0014   1405           00153         BSF SEM_G1                              ;LIGA O VERDE DO PRIMEIRO SEMAFORO
+                      00154         
+0015   1085           00155         BCF SEM_Y1                              ;DESLIGA O RESTO
+                      00156         
+0016   1205           00157         BCF SEM_G2
+                      00158 
+0017   1285           00159         BCF SEM_Y2
+                      00160         
+0018   0008           00161         RETURN
+0019                  00162 WAIT2SEC                                        ;ESPERA 2 SEGUNDOS (SINAL VERDE)
+0019   1D0B           00163         BTFSS   INTCON,T0IF             ;VERIFICA SE CONTADOR ESTOUROU,SENAO,CONTINUA NO LOOP
+001A   2???           00164         GOTO    WAIT2SEC                
+001B   2???           00165         CALL    LIMPA_T0FLAG
+                      00166 
+001C   303D           00167         MOVLW   .61                             ;REATRIBUI O VALOR NO TMR0
+001D   0081           00168         MOVWF   TMR0    
+                      00169 
+001E   0BA2           00170         DECFSZ  AUX,F                   ;DECREMENTA AUX, SE ZERO PULA O LOOP
+001F   2???           00171         GOTO    WAIT2SEC
+                      00172 
+0020   0008           00173         RETURN
+                      00174 
+0021                  00175 WAITHALFS                                       ;ESPERA .5 SEGUNDOS (SINAL AMARELO)
+0021   1D0B           00176         BTFSS   INTCON,T0IF     ;VERIFICA SE CONTADOR ESTOUROU,SENAO,CONTINUA NO LOOP
+0022   2???           00177         GOTO    WAITHALFS
+                      00178 
+0023   303D           00179         MOVLW   .61                             ;REATRIBUI O VALOR NO TMR0
+0024   0081           00180         MOVWF   TMR0
+                      00181 
+0025   2???           00182         CALL    LIMPA_T0FLAG
+0026   0BA2           00183         DECFSZ  AUX,F                   ;DECREMENTA AUX, SE ZERO PULA O LOOP
+0027   2???           00184         GOTO    WAITHALFS
+                      00185         
+0028   0008           00186         RETURN
+                      00187 
+0029                  00188 CHANGE_LIGHTS                           ;ALTERA O ESTADO DO SEMAFORO (DE SET_LIGHTS PARA CHANGE_LIGHTS E
+                             VICE - VERSA)
+0029   1605           00189         BSF SEM_G2                              ;LIGA O VERDE DO SEGUNDO SEMAFORO
+                      00190         
+002A   1285           00191         BCF SEM_Y2                              ;DESLIGA O RESTO
+                      00192         
+002B   1005           00193         BCF SEM_G1
+                      00194 
+002C   1085           00195         BCF SEM_Y1
+                      00196         
+002D   0008           00197         RETURN
+MPASM  5.51                      SEMAFORO.ASM   9-7-2017  11:10:47         PAGE  5
+
+
+LOC  OBJECT CODE     LINE SOURCE TEXT
+  VALUE
+
+                      00198 ;* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+                      00199 ;*                     INICIO DO PROGRAMA                          *
+                      00200 ;* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+                      00201         
+002E                  00202 INICIO
+002E   1683           00203         BANK1                           ;ALTERA PARA O BANCO 1
+002F   3000           00204         MOVLW   B'00000000' ;CONFIGURA TODAS AS PORTAS DO GPIO (PINOS)
+Message[302]: Register in operand not in bank 0.  Ensure that bank bits are correct.
+0030   0085           00205         MOVWF   TRISIO          ;COMO SAÍDAS
+Message[302]: Register in operand not in bank 0.  Ensure that bank bits are correct.
+0031   019F           00206         CLRF    ANSEL           ;DEFINE PORTAS COMO Digital I/O
+0032   3004           00207         MOVLW   B'00000100'
+Message[302]: Register in operand not in bank 0.  Ensure that bank bits are correct.
+0033   0081           00208         MOVWF   OPTION_REG      ;DEFINE OPÇÕES DE OPERAÇÃO
+0034   3000           00209         MOVLW   B'00000000'
+0035   008B           00210         MOVWF   INTCON          ;DEFINE OPÇÕES DE INTERRUPÇÕES
+0036   1283           00211         BANK0                           ;RETORNA PARA O BANCO
+0037   3007           00212         MOVLW   B'00000111'
+0038   0099           00213         MOVWF   CMCON           ;DEFINE O MODO DE OPERAÇÃO DO COMPARADOR ANALÓGICO
+                      00214         
+0039   0185           00215         CLRF    GPIO            ;LIMPANDO AS PORTAS!
+003A   2???           00216         CALL    SET_LIGTHS      ;SITUAÇÃO INICIAL DOS FARÓIS!
+                      00217 ;* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+                      00218 ;*                     INICIALIZAÇÃO DAS VARIÁVEIS                 *
+                      00219 ;* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+                      00220 
+                      00221 ;* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+                      00222 ;*                     ROTINA PRINCIPAL                            *
+                      00223 ;* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+003B                  00224 MAIN
+                      00225 
+                      00226         ;CORPO DA ROTINA PRINCIPAL
+                      00227 
+003B   2???           00228         CALL    LIMPA_T0FLAG    ;LIMPA A FLAG DE ESTOURO (PREUCAÇÃO INICIAL)
+003C   2???           00229         CALL    SET_PRESCALER   ;DEFINE O PRESCALER
+                      00230         
+003D   3028           00231         MOVLW   .40                             ;CONTADOR PARA ATINGIR OS 2 SEG. (4 VEZES O DE 0.5S)[1]
+003E   00A2           00232         MOVWF   AUX
+                      00233         
+003F   303D           00234         MOVLW   .61                             ;CONTAGEM DE 61 A 255  NO TIMER[2]
+0040   0081           00235         MOVWF   TMR0
+                      00236 
+0041   2???           00237         CALL    WAIT2SEC
+                      00238                 
+                      00239 
+                      00240 ;* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+                      00241 ;*            FIM CONTAGEM --> 2 SEC ---> SEMAFORO 1               *
+                      00242 ;* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+                      00243 
+0042   1485           00244         BSF             SEM_Y1                  ;LIGA O SEMAFORO AMARELO[3]
+0043   300A           00245         MOVLW   .10                             
+0044   00A2           00246         MOVWF   AUX
+                      00247 
+MPASM  5.51                      SEMAFORO.ASM   9-7-2017  11:10:47         PAGE  6
+
+
+LOC  OBJECT CODE     LINE SOURCE TEXT
+  VALUE
+
+0045   303D           00248         MOVLW   .61                             ;[2]
+0046   0081           00249         MOVWF   TMR0
+                      00250                         
+0047   2???           00251         CALL    WAITHALFS
+                      00252 
+                      00253 
+                      00254 ;* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+                      00255 ;*            FIM CONTAGEM --> .5 SEC --> AMARELO 1                *
+                      00256 ;* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+                      00257         ;FUNÇÃO DE TROCA DE COR DOS SEMAFOROS!
+0048   2???           00258         CALL CHANGE_LIGHTS
+                      00259         
+0049   3028           00260         MOVLW   .40                             ;[1]
+004A   00A2           00261         MOVWF   AUX
+                      00262         
+004B   303D           00263         MOVLW   .61                             ;[2]
+004C   0081           00264         MOVWF   TMR0
+                      00265 
+004D   2???           00266         CALL    WAIT2SEC
+                      00267 
+                      00268 ;* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+                      00269 ;*            FIM CONTAGEM --> 2 SEC ---> SEMAFORO 2               *
+                      00270 ;* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+004E   1685           00271         BSF             SEM_Y2                  ;[3]
+004F   300A           00272         MOVLW   .10                             
+0050   00A2           00273         MOVWF   AUX
+                      00274 
+0051   303D           00275         MOVLW   .61                             ;[2]
+0052   0081           00276         MOVWF   TMR0
+                      00277                         
+0053   2???           00278         CALL    WAITHALFS
+                      00279 
+                      00280 ;* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+                      00281 ;*            FIM CONTAGEM --> .5 SEC --> AMARELO 2                *
+                      00282 ;* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+0054   2???           00283         CALL    SET_LIGTHS              ;VOLTA A FORMAÇÃO INICIAL DO PROJETO
+0055   2???           00284         GOTO MAIN
+                      00285 
+                      00286 ;* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+                      00287 ;*                       FIM DO PROGRAMA                           *
+                      00288 ;* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+                      00289 
+3FA4                  00290         END
+MPASM  5.51                      SEMAFORO.ASM   9-7-2017  11:10:47         PAGE  7
+
+
+SYMBOL TABLE
+  LABEL                             VALUE 
+
+ADCON0                            0000001F
+ADCS0                             00000004
+ADCS1                             00000005
+ADCS2                             00000006
+ADFM                              00000007
+ADIE                              00000006
+ADIF                              00000006
+ADON                              00000000
+ADRESH                            0000001E
+ADRESL                            0000009E
+ANS0                              00000000
+ANS1                              00000001
+ANS2                              00000002
+ANS3                              00000003
+ANSEL                             0000009F
+AUX                               00000022
+BANK0                             BCF STATUS,RP0
+BANK1                             BSF STATUS,RP0
+C                                 00000000
+CAL0                              00000002
+CAL1                              00000003
+CAL2                              00000004
+CAL3                              00000005
+CAL4                              00000006
+CAL5                              00000007
+CHANGE_LIGHTS                     00000029
+CHS0                              00000002
+CHS1                              00000003
+CINV                              00000004
+CIS                               00000003
+CM0                               00000000
+CM1                               00000001
+CM2                               00000002
+CMCON                             00000019
+CMIE                              00000003
+CMIF                              00000003
+COUT                              00000006
+DC                                00000001
+EEADR                             0000009B
+EECON1                            0000009C
+EECON2                            0000009D
+EEDAT                             0000009A
+EEDATA                            0000009A
+EEIE                              00000007
+EEIF                              00000007
+F                                 00000001
+FSR                               00000004
+GIE                               00000007
+GO                                00000001
+GO_DONE                           00000001
+GO_NOT_DONE                       00000001
+GP0                               00000000
+GP1                               00000001
+MPASM  5.51                      SEMAFORO.ASM   9-7-2017  11:10:47         PAGE  8
+
+
+SYMBOL TABLE
+  LABEL                             VALUE 
+
+GP2                               00000002
+GP3                               00000003
+GP4                               00000004
+GP5                               00000005
+GPIE                              00000003
+GPIF                              00000000
+GPIO                              00000005
+GPIO0                             00000000
+GPIO1                             00000001
+GPIO2                             00000002
+GPIO3                             00000003
+GPIO4                             00000004
+GPIO5                             00000005
+INDF                              00000000
+INICIO                            0000002E
+INTCON                            0000000B
+INTE                              00000004
+INTEDG                            00000006
+INTF                              00000001
+IOC                               00000096
+IOC0                              00000000
+IOC1                              00000001
+IOC2                              00000002
+IOC3                              00000003
+IOC4                              00000004
+IOC5                              00000005
+IOCB                              00000096
+IOCB0                             00000000
+IOCB1                             00000001
+IOCB2                             00000002
+IOCB3                             00000003
+IOCB4                             00000004
+IOCB5                             00000005
+IRP                               00000007
+LIMPA_T0FLAG                      0000000C
+MAIN                              0000003B
+NOT_BOD                           00000000
+NOT_BOR                           00000000
+NOT_DONE                          00000001
+NOT_GPPU                          00000007
+NOT_PD                            00000003
+NOT_POR                           00000001
+NOT_T1SYNC                        00000002
+NOT_TO                            00000004
+OPTION_REG                        00000081
+OSCCAL                            00000090
+PCL                               00000002
+PCLATH                            0000000A
+PCON                              0000008E
+PEIE                              00000006
+PIE1                              0000008C
+PIR1                              0000000C
+PRE                               00000007
+MPASM  5.51                      SEMAFORO.ASM   9-7-2017  11:10:47         PAGE  9
+
+
+SYMBOL TABLE
+  LABEL                             VALUE 
+
+PRE_T                             00000001
+PS0                               00000000
+PS1                               00000001
+PS2                               00000002
+PSA                               00000003
+RD                                00000000
+RP0                               00000005
+RP1                               00000006
+SAI_INT                           00000007
+SEM_G1                            GPIO,0
+SEM_G2                            GPIO,4
+SEM_Y1                            GPIO,1
+SEM_Y2                            GPIO,5
+SET_LIGTHS                        00000014
+SET_PRESCALER                     0000000F
+STATUS                            00000003
+STATUS_TEMP                       00000021
+T0CS                              00000005
+T0IE                              00000005
+T0IF                              00000002
+T0SE                              00000004
+T1CKPS0                           00000004
+T1CKPS1                           00000005
+T1CON                             00000010
+T1IE                              00000000
+T1IF                              00000000
+T1OSCEN                           00000003
+TMR0                              00000001
+TMR0IE                            00000005
+TMR0IF                            00000002
+TMR1                              0000000E
+TMR1CS                            00000001
+TMR1GE                            00000006
+TMR1H                             0000000F
+TMR1IE                            00000000
+TMR1IF                            00000000
+TMR1L                             0000000E
+TMR1ON                            00000000
+TRISIO                            00000085
+TRISIO0                           00000000
+TRISIO1                           00000001
+TRISIO2                           00000002
+TRISIO3                           00000003
+TRISIO4                           00000004
+TRISIO5                           00000005
+VCFG                              00000006
+VR0                               00000000
+VR1                               00000001
+VR2                               00000002
+VR3                               00000003
+VRCON                             00000099
+VREN                              00000007
+VRR                               00000005
+MPASM  5.51                      SEMAFORO.ASM   9-7-2017  11:10:47         PAGE 10
+
+
+SYMBOL TABLE
+  LABEL                             VALUE 
+
+W                                 00000000
+WAIT2SEC                          00000019
+WAITHALFS                         00000021
+WPU                               00000095
+WPU0                              00000000
+WPU1                              00000001
+WPU2                              00000002
+WPU4                              00000004
+WPU5                              00000005
+WR                                00000001
+WREN                              00000002
+WRERR                             00000003
+W_TEMP                            00000020
+X                                 00000000
+Z                                 00000002
+_BODEN_OFF                        00003FBF
+_BODEN_ON                         00003FFF
+_BOREN_OFF                        00003FBF
+_BOREN_ON                         00003FFF
+_CONFIG                           00002007
+_CPD_OFF                          00003FFF
+_CPD_ON                           00003EFF
+_CP_OFF                           00003FFF
+_CP_ON                            00003F7F
+_DEVID1                           00002006
+_EC_OSC                           00003FFB
+_EXTRC_OSC_CLKOUT                 00003FFF
+_EXTRC_OSC_NOCLKOUT               00003FFE
+_FOSC_EC                          00003FFB
+_FOSC_EXTRCCLK                    00003FFF
+_FOSC_EXTRCIO                     00003FFE
+_FOSC_HS                          00003FFA
+_FOSC_INTRCCLK                    00003FFD
+_FOSC_INTRCIO                     00003FFC
+_FOSC_LP                          00003FF8
+_FOSC_XT                          00003FF9
+_HS_OSC                           00003FFA
+_IDLOC0                           00002000
+_IDLOC1                           00002001
+_IDLOC2                           00002002
+_IDLOC3                           00002003
+_INTRC_OSC_CLKOUT                 00003FFD
+_INTRC_OSC_NOCLKOUT               00003FFC
+_LP_OSC                           00003FF8
+_MCLRE_OFF                        00003FDF
+_MCLRE_ON                         00003FFF
+_PWRTE_OFF                        00003FFF
+_PWRTE_ON                         00003FEF
+_WDTE_OFF                         00003FF7
+_WDTE_ON                          00003FFF
+_WDT_OFF                          00003FF7
+_WDT_ON                           00003FFF
+_XT_OSC                           00003FF9
+MPASM  5.51                      SEMAFORO.ASM   9-7-2017  11:10:47         PAGE 11
+
+
+SYMBOL TABLE
+  LABEL                             VALUE 
+
+__12F675                          00000001
+__DEBUG                           1
+
+Errors   :     1
+Warnings :     0 reported,     0 suppressed
+Messages :     4 reported,     0 suppressed
+
+

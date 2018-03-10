@@ -1,0 +1,1092 @@
+MPASM  5.51                      ATIV_3_1.ASM   10-18-2017  14:49:39         PAGE  1
+
+
+LOC  OBJECT CODE     LINE SOURCE TEXT
+  VALUE
+
+                      00001 ;* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+                      00002 ;*              MODIFICAÇÕES PARA USO COM 12F675                   *
+                      00003 ;*                FEITAS PELO PROF. MARDSON                        *
+                      00004 ;*                    FEVEREIRO DE 2016                            *
+                      00005 ;* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+                      00006 
+                      00007 ;* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+                      00008 ;*                       NOME DO PROJETO                           *
+                      00009 ;*                           CLIENTE                               *
+                      00010 ;*         DESENVOLVIDO PELA MOSAICO ENGENHARIA E CONSULTORIA      *
+                      00011 ;*   VERSÃO: 1.0                           DATA: 17/06/03          *
+                      00012 ;* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+                      00013 ;*                     DESCRIÇÃO DO ARQUIVO                        *
+                      00014 ;*-----------------------------------------------------------------*
+                      00015 ;*   MODELO PARA O PIC 12F675                                      *
+                      00016 ;*                                                                 *
+                      00017 ;*                                                                 *
+                      00018 ;* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+                      00019 
+                      00020 ;* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+                      00021 ;*                     ARQUIVOS DE DEFINIÇÕES                      *
+                      00022 ;* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+                      00023 #INCLUDE <P12F675.INC>  ;ARQUIVO PADRÃO MICROCHIP PARA 12F675
+                      00001         LIST
+                      00002 
+                      00003 ;==========================================================================
+                      00004 ;  MPASM PIC12F675 processor include
+                      00005 ; 
+                      00006 ;  (c) Copyright 1999-2013 Microchip Technology, All rights reserved
+                      00007 ;==========================================================================
+                      00008 
+                      00366         LIST
+                      00024 
+2007   3FA4           00025         __CONFIG _BODEN_OFF & _CP_OFF & _PWRTE_ON & _WDT_OFF & _MCLRE_ON & _INTRC_OSC_NOCLKOUT
+                      00026 
+                      00027 ;* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+                      00028 ;*                    PAGINAÇÃO DE MEMÓRIA                         *
+                      00029 ;* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+                      00030 ;DEFINIÇÃO DE COMANDOS DE USUÁRIO PARA ALTERAÇÃO DA PÁGINA DE MEMÓRIA
+                      00031 #DEFINE BANK0   BCF STATUS,RP0  ;SETA BANK 0 DE MEMÓRIA
+                      00032 #DEFINE BANK1   BSF STATUS,RP0  ;SETA BANK 1 DE MAMÓRIA
+                      00033 
+                      00034 ;* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+                      00035 ;*                         VARIÁVEIS                               *
+                      00036 ;* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+                      00037 ; DEFINIÇÃO DOS NOMES E ENDEREÇOS DE TODAS AS VARIÁVEIS UTILIZADAS 
+                      00038 ; PELO SISTEMA
+                      00039 
+                      00040         CBLOCK  0x20    ;ENDEREÇO INICIAL DA MEMÓRIA DE
+                      00041                                         ;USUÁRIO
+  00000020            00042                 W_TEMP          ;REGISTRADORES TEMPORÁRIOS PARA USO
+  00000021            00043                 STATUS_TEMP     ;JUNTO ÀS INTERRUPÇÕES
+                      00044 
+MPASM  5.51                      ATIV_3_1.ASM   10-18-2017  14:49:39         PAGE  2
+
+
+LOC  OBJECT CODE     LINE SOURCE TEXT
+  VALUE
+
+  00000022            00045                 WRD                     ;USADO PARA O PRINT             
+  00000023            00046                 COUNT           ;USADO PARA A DIVISÃO EM 4 BIT
+                      00047                 ;EXCLUSIVOS PARA O LCD
+                      00048 
+  00000024            00049                 CONTADOR        ;CONTADOR DOS 40 BITS DO DHT11
+  00000025            00050                 CONT_ASCII
+                      00051                 
+  00000026            00052                 UM_INT          ;PARTE INTEIRA DA UMIDADE
+  00000027            00053                 UM_DEC          ;PARTE DECIMAL DA UMIDADE
+  00000028            00054                 TEMPER_INT      ;PARTE INTEIRA DA TEMPERATURA
+  00000029            00055                 TEMPER_DEC      ;PARTE DECIMAL DA TEMPERATURA
+  0000002A            00056                 CHECKSUM        ;
+                      00057                 
+                      00058                 
+                      00059                 ;NOVAS VARIÁVEIS
+                      00060 
+                      00061         ENDC                    ;FIM DO BLOCO DE MEMÓRIA
+                      00062 ;* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+                      00063 ;*                        FLAGS INTERNOS                           *
+                      00064 ;* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+                      00065 ; DEFINIÇÃO DE TODOS OS FLAGS UTILIZADOS PELO SISTEMA
+                      00066 
+                      00067 ;* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+                      00068 ;*                         CONSTANTES                              *
+                      00069 ;* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+                      00070 ; DEFINIÇÃO DE TODAS AS CONSTANTES UTILIZADAS PELO SISTEMA
+                      00071 
+                      00072 ;* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+                      00073 ;*                           ENTRADAS                              *
+                      00074 ;* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+                      00075 ; DEFINIÇÃO DE TODOS OS PINOS QUE SERÃO UTILIZADOS COMO ENTRADA
+                      00076 ; RECOMENDAMOS TAMBÉM COMENTAR O SIGNIFICADO DE SEUS ESTADOS (0 E 1)
+                      00077 
+                      00078 #DEFINE         SR_CLK          GPIO,0
+                      00079 #DEFINE         SR_DAT          GPIO,4
+                      00080 #DEFINE         LCD_EN          GPIO,5  
+                      00081 
+                      00082 ;* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+                      00083 ;*                           SAÍDAS                                *
+                      00084 ;* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+                      00085 ; DEFINIÇÃO DE TODOS OS PINOS QUE SERÃO UTILIZADOS COMO SAÍDA
+                      00086 ; RECOMENDAMOS TAMBÉM COMENTAR O SIGNIFICADO DE SEUS ESTADOS (0 E 1)
+                      00087 
+                      00088 ;* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+                      00089 ;*                       VETOR DE RESET                            *
+                      00090 ;* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+                      00091 
+0000                  00092         ORG     0x00                    ;ENDEREÇO INICIAL DE PROCESSAMENTO
+0000   28EE           00093         GOTO    INICIO
+                      00094         
+                      00095 ;* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+                      00096 ;*                    INÍCIO DA INTERRUPÇÃO                        *
+                      00097 ;* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+MPASM  5.51                      ATIV_3_1.ASM   10-18-2017  14:49:39         PAGE  3
+
+
+LOC  OBJECT CODE     LINE SOURCE TEXT
+  VALUE
+
+                      00098 ; ENDEREÇO DE DESVIO DAS INTERRUPÇÕES. A PRIMEIRA TAREFA É SALVAR OS
+                      00099 ; VALORES DE "W" E "STATUS" PARA RECUPERAÇÃO FUTURA
+                      00100 
+0004                  00101         ORG     0x04                    ;ENDEREÇO INICIAL DA INTERRUPÇÃO
+0004   00A0           00102         MOVWF   W_TEMP          ;COPIA W PARA W_TEMP
+0005   0E03           00103         SWAPF   STATUS,W
+0006   00A1           00104         MOVWF   STATUS_TEMP     ;COPIA STATUS PARA STATUS_TEMP
+                      00105 
+                      00106 ;* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+                      00107 ;*                    ROTINA DE INTERRUPÇÃO                        *
+                      00108 ;* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+                      00109 ; AQUI SERÁ ESCRITA AS ROTINAS DE RECONHECIMENTO E TRATAMENTO DAS
+                      00110 ; INTERRUPÇÕES
+                      00111 
+                      00112 ;* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+                      00113 ;*                 ROTINA DE SAÍDA DA INTERRUPÇÃO                  *
+                      00114 ;* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+                      00115 ; OS VALORES DE "W" E "STATUS" DEVEM SER RECUPERADOS ANTES DE 
+                      00116 ; RETORNAR DA INTERRUPÇÃO
+                      00117 
+0007                  00118 SAI_INT
+0007   0E21           00119         SWAPF   STATUS_TEMP,W
+0008   0083           00120         MOVWF   STATUS          ;MOVE STATUS_TEMP PARA STATUS
+0009   0EA0           00121         SWAPF   W_TEMP,F
+000A   0E20           00122         SWAPF   W_TEMP,W        ;MOVE W_TEMP PARA W
+000B   0009           00123         RETFIE
+                      00124 
+                      00125 ;* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+                      00126 ;*                       ROTINAS E SUBROTINAS                      *
+                      00127 ;* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+                      00128 ; CADA ROTINA OU SUBROTINA DEVE POSSUIR A DESCRIÇÃO DE FUNCIONAMENTO
+                      00129 ; E UM NOME COERENTE ÀS SUAS FUNÇÕES.
+                      00130 
+000C                  00131 SUBROTINA1
+                      00132 
+                      00133         ;CORPO DA ROTINA
+                      00134 
+000C   0008           00135         RETURN
+000D                  00136 LIMPA_T0FLAG
+                      00137 
+000D   110B           00138         BCF             INTCON,T0IF             ;LIMPA A FLAG
+000E   128B           00139         BCF             INTCON,T0IE             ;DESABILITA AS INTERRUPÇÕES
+                      00140 
+000F   0008           00141         RETURN
+                      00142 
+0010                  00143 COUNT_RESET                                     
+0010   3004           00144         MOVLW   .4
+0011   00A3           00145         MOVWF   COUNT
+                      00146 
+0012   0008           00147         RETURN
+0013                  00148 SETUP
+0013   2010           00149         CALL    COUNT_RESET                     ;QUANTIDADE DE ROTAÇÕES 
+                      00150 
+MPASM  5.51                      ATIV_3_1.ASM   10-18-2017  14:49:39         PAGE  4
+
+
+LOC  OBJECT CODE     LINE SOURCE TEXT
+  VALUE
+
+0014   20E9           00151         CALL    W_15MS                          ;ESPERA > 15 MS 
+                      00152 
+0015   3030           00153         MOVLW   b'00110000'                     ;MANDA 0X30 PARA O LCD
+0016   00A2           00154         MOVWF   WRD
+                      00155         
+0017   2050           00156         CALL    SEND_LCD0                       ;MANDA OP BIT A BIT PARA SR
+                      00157 ;******************** PALAVRA ENVIADA *********************
+0018   2010           00158         CALL    COUNT_RESET
+                      00159 
+0019   20E3           00160         CALL    W_4MS                           ;ESPERA > 4 MS
+                      00161         
+001A   3030           00162         MOVLW   b'00110000'                     ;MANDA 0X30 PARA O LCD
+001B   00A2           00163         MOVWF   WRD
+                      00164         
+001C   2050           00165         CALL    SEND_LCD0               
+                      00166 ;******************** PALAVRA ENVIADA *********************
+001D   2010           00167         CALL COUNT_RESET
+                      00168 
+001E   20DA           00169         CALL    W_100US                                 ;ESPERA > 100 US 
+                      00170         
+001F   3030           00171         MOVLW   b'00110000'                             ;MANDA 0X30 PARA O LCD
+0020   00A2           00172         MOVWF   WRD
+                      00173         
+0021   2050           00174         CALL    SEND_LCD0                               ;MANDA 0X30
+                      00175 ;******************** PALAVRA ENVIADA *********************
+0022   2010           00176         CALL COUNT_RESET
+                      00177         
+0023   20D4           00178         CALL    W_40US                                  ;ESPERA > 40 US
+                      00179         
+0024   3020           00180         MOVLW   B'00100000'                                     
+0025   00A2           00181         MOVWF   WRD
+                      00182         
+0026   2050           00183         CALL    SEND_LCD0                               ;ESTABELECA COMUNICAÇÃO EM 4 VIAS(00010)
+                      00184 ;******************** PALAVRA ENVIADA *********************
+0027   2010           00185         CALL COUNT_RESET
+                      00186         
+0028   20D4           00187         CALL    W_40US                                  ;ESPERA > 40 US
+                      00188         
+0029   3020           00189         MOVLW   B'00100000'                                     
+002A   00A2           00190         MOVWF   WRD
+                      00191         
+002B   2050           00192         CALL    SEND_LCD0                               ;MANDA CONDIÇÕES DE OPERAÇÃO (00010)
+                      00193 ;******************** PALAVRA ENVIADA *********************
+002C   2010           00194         CALL COUNT_RESET
+                      00195         
+002D   3040           00196         MOVLW   B'1000000'                                      
+002E   00A2           00197         MOVWF   WRD
+                      00198         
+002F   2050           00199         CALL    SEND_LCD0                               ;MANDA CONDIÇÕES DE OPERAÇÃO (01000)
+                      00200 ;******************** PALAVRA ENVIADA *********************
+0030   2010           00201         CALL COUNT_RESET
+                      00202         
+0031   20D4           00203         CALL    W_40US
+MPASM  5.51                      ATIV_3_1.ASM   10-18-2017  14:49:39         PAGE  5
+
+
+LOC  OBJECT CODE     LINE SOURCE TEXT
+  VALUE
+
+                      00204                                                                         ;ESPERA > 40 US
+0032   3000           00205         MOVLW   B'00000000'                                     
+0033   00A2           00206         MOVWF   WRD                                             
+                      00207 
+0034   2050           00208         CALL    SEND_LCD0                               ;LIMPA DISPLAY (00000)
+                      00209 ;******************** PALAVRA ENVIADA *********************
+0035   2010           00210         CALL COUNT_RESET
+                      00211 
+0036   3010           00212         MOVLW   B'00010000'                                     
+0037   00A2           00213         MOVWF   WRD                                             
+                      00214 
+0038   2050           00215         CALL    SEND_LCD0                               ;POSICIONA CURSOR (00001)
+                      00216 ;******************** PALAVRA ENVIADA *********************
+0039   2010           00217         CALL COUNT_RESET
+                      00218 
+003A   20DD           00219         CALL    W_1800US                                ;ESPERA > 1.8 MS
+                      00220 
+003B   3000           00221         MOVLW   B'00000000'                                     
+003C   00A2           00222         MOVWF   WRD                                             
+                      00223 
+003D   2050           00224         CALL    SEND_LCD0                               ;LIMPA DISPLAY (00000)                          
+                                                    
+                      00225 ;******************** PALAVRA ENVIADA *********************
+003E   2010           00226         CALL COUNT_RESET
+                      00227 
+003F   3060           00228         MOVLW   B'1100000'                              
+0040   00A2           00229         MOVWF   WRD                                             
+                      00230 
+0041   2050           00231         CALL    SEND_LCD0                               ;LIGA SEM CURSOR (01100)                        
+                      00232 ;******************** PALAVRA ENVIADA *********************
+0042   2010           00233         CALL COUNT_RESET
+                      00234         
+0043   20D4           00235         CALL    W_40US                                  ;ESPERA > 40 US
+                      00236                                                                 ;DESLOCAMENTO AUTOMATICO PARA A DIREITA
+0044   3000           00237         MOVLW   B'00000000'                                     
+0045   00A2           00238         MOVWF   WRD                                             
+                      00239 
+0046   2050           00240         CALL    SEND_LCD0                               ;LIMPA DISPLAY (00000)                          
+                                                    ;(00000) & (00110)
+                      00241 ;******************** PALAVRA ENVIADA *********************
+0047   2010           00242         CALL COUNT_RESET
+                      00243 
+0048   3060           00244         MOVLW   B'01100000'
+0049   00A2           00245         MOVWF   WRD                                             
+                      00246 
+004A   2050           00247         CALL    SEND_LCD0                               ;MODO OPERACIONAL 
+                      00248 ;******************** PALAVRA ENVIADA *********************
+004B   20D4           00249         CALL    W_40US                                  ;ESPERA 40 US
+                      00250         
+004C   0008           00251         RETURN
+                      00252 ;* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+                      00253 ;*                                      CLOCK SHIFT REGISTER                       *
+                      00254 ;* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+MPASM  5.51                      ATIV_3_1.ASM   10-18-2017  14:49:39         PAGE  6
+
+
+LOC  OBJECT CODE     LINE SOURCE TEXT
+  VALUE
+
+                      00255 ;RESPONSAVEL POR MANDAR O DADO PARA O SHIFT REGISTER
+                      00256 ;SEM ELE O DADO NÃO É ENVIADO
+004D                  00257 SR_CLOCK
+                      00258 
+004D   1405           00259         BSF     SR_CLK
+004E   1005           00260         BCF     SR_CLK
+                      00261 
+004F   0008           00262         RETURN
+                      00263 ;* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+                      00264 ;*                                      MANDAR P/ SR (RS = 0)                      *
+                      00265 ;* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+                      00266 ;PARA COMANDOS OPERACIONAIS, O BIT RS DO LCD DEVE SER ZERO
+                      00267 
+0050                  00268 SEND_LCD0                                               ;MANDA INSTRUÇÕES (RS = 0
+                      00269 
+                      00270 
+Message[305]: Using default destination of 1 (file).
+0050   0DA2           00271         RLF             WRD                                     ;BIT NO SR VIA CARRY
+                      00272                                                                 ;(FALTA VER SE É BIG ENDIAN OU LITTLE EN
+                            DIAN)
+                      00273 
+0051   1803           00274         BTFSC   STATUS,C                        ;VERIFICA Q VALOR VAI SER MANDADO (0 OU 1)
+                      00275                                                                 ;PULA SE CARRY = 0
+0052   2858           00276         GOTO    SR_SET                          ;MANDA 1 AO SR
+                      00277         
+0053   1205           00278         BCF             SR_DAT                          ;MANDA 0 AO SR
+0054   204D           00279         CALL    SR_CLOCK
+                      00280         
+0055                  00281 CHECK_FINAL0
+0055   0BA3           00282         DECFSZ  COUNT,1
+0056   2850           00283         GOTO    SEND_LCD0
+                      00284         
+0057   285B           00285         GOTO    FINAL_LCD0
+                      00286 
+0058                  00287 SR_SET
+0058   1605           00288         BSF             SR_DAT                          ;MANDA 1 AO SR
+0059   204D           00289         CALL    SR_CLOCK
+                      00290 
+005A   2855           00291         GOTO    CHECK_FINAL0                    ;VOLTA AO INÍCIO
+                      00292 
+005B                  00293 FINAL_LCD0
+005B   1205           00294         BCF             SR_DAT          ; ENVIA RS = 0 (OPERAÇÃO)
+005C   204D           00295         CALL    SR_CLOCK        
+                      00296         
+005D   1605           00297         BSF             SR_DAT          ; ENVIA BACKLIGHT = 1 (LUZ DE FUNDO)
+005E   204D           00298         CALL    SR_CLOCK
+                      00299         
+005F   1205           00300         BCF             SR_DAT          ;TESTE
+0060   204D           00301         CALL    SR_CLOCK        ; PREENCHE COM QUALQUER COISA (DON'T CARE)
+0061   204D           00302         CALL    SR_CLOCK
+                      00303 
+0062   1685           00304         BSF             LCD_EN
+0063   0000           00305         NOP                                     ; PULSO DE LCD (CASO NÃO PEGUE, TENTAR INVERTER ESSES VA
+MPASM  5.51                      ATIV_3_1.ASM   10-18-2017  14:49:39         PAGE  7
+
+
+LOC  OBJECT CODE     LINE SOURCE TEXT
+  VALUE
+
+                            LORES)
+0064   1285           00306         BCF             LCD_EN
+                      00307 
+0065   0008           00308         RETURN
+                      00309 
+                      00310 ;* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+                      00311 ;*                                      MANDAR P/ SR (RS = 1)                      *
+                      00312 ;* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+                      00313 ;PARA ENVIO DE DADOS (CARACTERES), O BIT RS DO LCD DEVE SER UM
+                      00314 
+0066                  00315 SEND_LCD1                                               ;MANDA INSTRUÇÕES (RS = 0
+                      00316 
+                      00317         
+Message[305]: Using default destination of 1 (file).
+0066   0DA2           00318         RLF             WRD                                     ;BIT NO SR VIA CARRY
+                      00319                                                                 ;(FALTA VER SE É BIG ENDIAN OU LITTLE EN
+                            DIAN)
+                      00320 
+0067   1803           00321         BTFSC   STATUS,C                        ;VERIFICA Q VALOR VAI SER MANDADO (0 OU 1)
+                      00322                                                                 ;PULA SE CARRY = 0
+0068   286E           00323         GOTO    SR_SET1                         ;MANDA 1 AO SR
+                      00324         
+0069   1205           00325         BCF             SR_DAT                          ;MANDA 0 AO SR
+006A   204D           00326         CALL    SR_CLOCK
+                      00327 
+006B                  00328 CHECK_FINAL1    
+006B   0BA3           00329         DECFSZ  COUNT,1                         ;DECREMENTA
+                      00330         
+006C   2866           00331         GOTO    SEND_LCD1
+006D   2871           00332         GOTO    FINAL_LCD1      
+                      00333 
+006E                  00334 SR_SET1
+006E   1605           00335         BSF             SR_DAT                          ;MANDA 0 AO SR
+006F   204D           00336         CALL    SR_CLOCK
+                      00337 
+0070   286B           00338         GOTO    CHECK_FINAL1                    ;VOLTA AO INÍCIO
+                      00339 
+0071                  00340 FINAL_LCD1
+                      00341 
+0071   1605           00342         BSF             SR_DAT          ; ENVIA RS = 1 (CARACTERE)
+0072   204D           00343         CALL    SR_CLOCK        
+                      00344         
+0073   1605           00345         BSF             SR_DAT          ; ENVIA BACKLIGHT = 1 (LUZ DE FUNDO)
+0074   204D           00346         CALL    SR_CLOCK
+                      00347 
+0075   204D           00348         CALL    SR_CLOCK        ; PREENCHE COM QUALQUER COISA (DON'T CARE)
+0076   204D           00349         CALL    SR_CLOCK
+                      00350 
+0077   1685           00351         BSF             LCD_EN
+0078   0000           00352         NOP                                     ; PULSO DE LEITURA DO LCD
+0079   1285           00353         BCF             LCD_EN                  
+                      00354 
+007A   0008           00355         RETURN
+MPASM  5.51                      ATIV_3_1.ASM   10-18-2017  14:49:39         PAGE  8
+
+
+LOC  OBJECT CODE     LINE SOURCE TEXT
+  VALUE
+
+                      00356 
+                      00357 
+007B                  00358 DHT11
+                      00359         ;CARRY ESTÁ EM 1 OU ZERO E ESSE VALOR SERÁ REPASSADO AOS DEMAIS REGISTRADORES
+Message[305]: Using default destination of 1 (file).
+007B   0DAA           00360         RLF     CHECKSUM        ;CHECKSUM
+Message[305]: Using default destination of 1 (file).
+007C   0DA9           00361         RLF     TEMPER_DEC      ;PARTE DECIMAL DA TEMPERATURA
+Message[305]: Using default destination of 1 (file).
+007D   0DA8           00362         RLF     TEMPER_INT      ;PARTE INTEIRA DA TEMPERATURA
+Message[305]: Using default destination of 1 (file).
+007E   0DA7           00363         RLF     UM_DEC          ;PARTE DECIMAL DA UMIDADE
+Message[305]: Using default destination of 1 (file).
+007F   0DA6           00364         RLF UM_INT              ;PARTE INTEIRA DA UMIDADE
+                      00365 
+                      00366 
+0080   0008           00367         RETURN
+0081                  00368 TRANSFORM_ASCII
+                      00369 
+                      00370 ;--------------------- PARTE NOME ----------------------------------
+0081   3048           00371         MOVLW   'H'
+0082   20CC           00372         CALL    PRINT_RESULT
+                      00373         
+0083   3045           00374         MOVLW   'E'
+0084   20CC           00375         CALL    PRINT_RESULT
+                      00376         
+0085   304E           00377         MOVLW   'N'
+0086   20CC           00378         CALL    PRINT_RESULT
+                      00379         
+0087   3052           00380         MOVLW   'R'
+0088   20CC           00381         CALL    PRINT_RESULT
+                      00382         
+0089   3049           00383         MOVLW   'I'
+008A   20CC           00384         CALL    PRINT_RESULT
+                      00385         
+008B   3051           00386         MOVLW   'Q'
+008C   20CC           00387         CALL    PRINT_RESULT
+                      00388         
+008D   3055           00389         MOVLW   'U'
+008E   20CC           00390         CALL    PRINT_RESULT
+                      00391         
+008F   3045           00392         MOVLW   'E'
+0090   20CC           00393         CALL    PRINT_RESULT
+                      00394         
+0091   3048           00395         MOVLW   'H' ;QUEBRA DE LINHA
+0092   20CC           00396         CALL    PRINT_RESULT
+                      00397         
+0093   3054           00398         MOVLW   'T'
+0094   20CC           00399         CALL    PRINT_RESULT
+                      00400         
+0095   3045           00401         MOVLW   'E'
+0096   20CC           00402         CALL    PRINT_RESULT
+                      00403         
+MPASM  5.51                      ATIV_3_1.ASM   10-18-2017  14:49:39         PAGE  9
+
+
+LOC  OBJECT CODE     LINE SOURCE TEXT
+  VALUE
+
+0097   304D           00404         MOVLW   'M'
+0098   20CC           00405         CALL    PRINT_RESULT
+                      00406         
+0099   3050           00407         MOVLW   'P'
+009A   20CC           00408         CALL    PRINT_RESULT
+                      00409         
+009B   303D           00410         MOVLW   '='
+009C   20CC           00411         CALL    PRINT_RESULT
+                      00412         
+009D   01A5           00413         CLRF    CONT_ASCII      
+                      00414 
+                      00415 ;--------------------- PARTE TEMPERATURA ----------------------------
+009E                  00416 SUBTRACT_T      
+009E   300A           00417         MOVLW   .10
+Message[305]: Using default destination of 1 (file).
+009F   02A8           00418         SUBWF   TEMPER_INT
+00A0   1803           00419         BTFSC   STATUS,C ;SE O CARRY FOR 1 ENTÃO O NUMERO DE CONTAGENS ATINGIU O LIMITE
+00A1   28CA           00420         GOTO    SUBTRACT_PT; SENÃO CONTINUA SUBTRAINDO ATÉ UM RESULTADO NEGATIVO
+                      00421         
+00A2   3030           00422         MOVLW   .48
+Message[305]: Using default destination of 1 (file).
+00A3   07A5           00423         ADDWF   CONT_ASCII ;GERA O VALOR EM ASCII
+                      00424 
+00A4   0825           00425         MOVFW   CONT_ASCII
+00A5   20CC           00426         CALL    PRINT_RESULT    ;ENVIA PARA O LCD
+                      00427         
+00A6   300A           00428         MOVLW   .10
+Message[305]: Using default destination of 1 (file).
+00A7   07A6           00429         ADDWF   UM_INT  ;PARA GERAR O SEGUNDO DÍGITO
+00A8   3030           00430         MOVLW   .48
+Message[305]: Using default destination of 1 (file).
+00A9   07A6           00431         ADDWF   UM_INT  ;VALOR EM ASCII
+                      00432 
+00AA   0826           00433         MOVFW   UM_INT
+00AB   20CC           00434         CALL    PRINT_RESULT ;ENVIA PARA O LCD
+                      00435 ;--------------------------------------------------------------------
+                      00436         
+00AC   3043           00437         MOVLW 'C'
+00AD   20CC           00438         CALL    PRINT_RESULT
+                      00439 
+00AE   3020           00440         MOVLW ' '
+00AF   20CC           00441         CALL    PRINT_RESULT
+                      00442 
+00B0   3055           00443         MOVLW 'U'
+00B1   20CC           00444         CALL    PRINT_RESULT
+                      00445 
+00B2   3052           00446         MOVLW 'R'
+00B3   20CC           00447         CALL    PRINT_RESULT
+                      00448         
+00B4   303D           00449         MOVLW '='
+00B5   20CC           00450         CALL    PRINT_RESULT
+                      00451         
+00B6   01A5           00452         CLRF    CONT_ASCII
+MPASM  5.51                      ATIV_3_1.ASM   10-18-2017  14:49:39         PAGE 10
+
+
+LOC  OBJECT CODE     LINE SOURCE TEXT
+  VALUE
+
+                      00453 
+                      00454 ; -------------------- PARTE UMIDADE -------------------------------
+                      00455 
+00B7                  00456 SUBTRACT_U      
+00B7   300A           00457         MOVLW   .10
+Message[305]: Using default destination of 1 (file).
+00B8   02A6           00458         SUBWF   UM_INT
+00B9   1803           00459         BTFSC   STATUS,C ;SE O CARRY FOR 1 ENTÃO O NUMERO DE CONTAGENS ATINGIU O LIMITE
+00BA   28C8           00460         GOTO    SUBTRACT_PU; SENÃO CONTINUA SUBTRAINDO ATÉ UM RESULTADO NEGATIVO
+                      00461         
+00BB   3030           00462         MOVLW   .48
+Message[305]: Using default destination of 1 (file).
+00BC   07A5           00463         ADDWF   CONT_ASCII ;GERA O VALOR EM ASCII
+                      00464 
+00BD   0825           00465         MOVFW   CONT_ASCII
+00BE   20CC           00466         CALL    PRINT_RESULT    ;ENVIA PARA O LCD
+                      00467         
+00BF   300A           00468         MOVLW   .10
+Message[305]: Using default destination of 1 (file).
+00C0   07A6           00469         ADDWF   UM_INT  ;PARA GERAR O SEGUNDO DÍGITO
+00C1   3030           00470         MOVLW   .48
+Message[305]: Using default destination of 1 (file).
+00C2   07A6           00471         ADDWF   UM_INT  ;VALOR EM ASCII
+                      00472 
+00C3   0826           00473         MOVFW   UM_INT
+00C4   20CC           00474         CALL    PRINT_RESULT ;ENVIA PARA O LCD
+                      00475 ;--------------------------------------------------------------------
+                      00476 
+00C5   3025           00477         MOVLW   '%'
+00C6   20CC           00478         CALL    PRINT_RESULT
+                      00479 
+00C7   0008           00480         RETURN
+                      00481 
+00C8                  00482 SUBTRACT_PU
+Message[305]: Using default destination of 1 (file).
+00C8   0AA5           00483         INCF    CONT_ASCII
+00C9   28B7           00484         GOTO    SUBTRACT_U
+00CA                  00485 SUBTRACT_PT
+Message[305]: Using default destination of 1 (file).
+00CA   0AA5           00486         INCF    CONT_ASCII
+00CB   289E           00487         GOTO    SUBTRACT_T
+                      00488 
+00CC                  00489 PRINT_RESULT
+00CC   00A2           00490         MOVWF   WRD
+00CD   2010           00491         CALL    COUNT_RESET                     ;NECESSÁRIO MANDAR A MSG 2 VEZES AO LCD
+00CE   2066           00492         CALL    SEND_LCD1                       ;1 - PARTE MAIS SIGNIFICATIVA
+00CF   20DD           00493         CALL    W_1800US
+00D0   2010           00494         CALL    COUNT_RESET
+00D1   2066           00495         CALL    SEND_LCD1                       ;2 - PARTE MENOS SIGNIFICATIVA
+00D2   20DD           00496         CALL    W_1800US
+                      00497 
+00D3   0008           00498         RETURN
+                      00499 ;* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+MPASM  5.51                      ATIV_3_1.ASM   10-18-2017  14:49:39         PAGE 11
+
+
+LOC  OBJECT CODE     LINE SOURCE TEXT
+  VALUE
+
+                      00500 ;*                                              DELAYS                             *
+                      00501 ;* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+                      00502 ;TEMPOS MINIMOS DE DELAY, COMO É PRECISO OBEDECER APENAS AO TEMPO MÍNIMO
+                      00503 ;AS FUNÇÕES APRESENTAM VALORES MAIORES DO QUE OS NOMES DE SUAS SUBROTINAS
+                      00504 ;FACILITA NA REUTILIZAÇÃO DE SUBROTINAS
+                      00505 ;EX.: DELAY 100 MS = 2 * 40 MS  (TEMPO REAL =  80 uS)
+                      00506  
+00D4                  00507 W_40US                                          ;TEMPO REAL =  80 uS
+                      00508 
+00D4   30FE           00509         MOVLW   .254                    ;ATRIBUI O VALOR NO TMR0
+00D5   0081           00510         MOVWF   TMR0
+                      00511 
+00D6                  00512 W_40CHECK
+                      00513 
+00D6   1D0B           00514         BTFSS   INTCON,T0IF             ;VERIFICA SE CONTADOR ESTOUROU,SENAO,CONTINUA NO LOOP
+00D7   28D6           00515         GOTO    W_40CHECK               
+00D8   200D           00516         CALL    LIMPA_T0FLAG
+                      00517 
+00D9   0008           00518         RETURN
+                      00519 
+00DA                  00520 W_100US                                         ;TEMPO REAL = 165 uS
+                      00521         
+00DA   20D4           00522         CALL W_40US                             
+00DB   20D4           00523         CALL W_40US                     
+                      00524                                                         
+                      00525 
+00DC   0008           00526         RETURN
+                      00527 
+00DD                  00528 W_1800US                                        ;TEMPO REAL = 1.875 mS
+00DD   30E2           00529         MOVLW   .226                    ;ATRIBUI O VALOR NO TMR0
+00DE   0081           00530         MOVWF   TMR0
+                      00531 
+00DF                  00532 W_1800USCHECK                           
+                      00533 
+00DF   1D0B           00534         BTFSS   INTCON,T0IF             ;VERIFICA SE CONTADOR ESTOUROU,SENAO,CONTINUA NO LOOP
+00E0   28DF           00535         GOTO    W_1800USCHECK           
+00E1   200D           00536         CALL    LIMPA_T0FLAG
+                      00537 
+00E2   0008           00538         RETURN
+                      00539 
+00E3                  00540 W_4MS                                           ;TEMPO REAL = 4.112 mS
+00E3   30BF           00541         MOVLW   .191                    ;ATRIBUI O VALOR NO TMR0
+00E4   0081           00542         MOVWF   TMR0
+                      00543 
+00E5                  00544 W_4MSCHECK                              
+                      00545 
+00E5   1D0B           00546         BTFSS   INTCON,T0IF             ;VERIFICA SE CONTADOR ESTOUROU,SENAO,CONTINUA NO LOOP
+00E6   28E5           00547         GOTO    W_4MSCHECK              
+00E7   200D           00548         CALL    LIMPA_T0FLAG
+00E8   0008           00549         RETURN
+                      00550 
+00E9                  00551 W_15MS                                          ;TEMPO REAL = 16.452 mS
+00E9   20E3           00552         CALL W_4MS
+MPASM  5.51                      ATIV_3_1.ASM   10-18-2017  14:49:39         PAGE 12
+
+
+LOC  OBJECT CODE     LINE SOURCE TEXT
+  VALUE
+
+00EA   20E3           00553         CALL W_4MS
+00EB   20E3           00554         CALL W_4MS
+00EC   20E3           00555         CALL W_4MS
+                      00556         
+00ED   0008           00557         RETURN
+                      00558 ;* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+                      00559 ;*                     INICIO DO PROGRAMA                          *
+                      00560 ;* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+                      00561         
+00EE                  00562 INICIO
+00EE   1683           00563         BANK1                           ;ALTERA PARA O BANCO 1
+00EF   3000           00564         MOVLW   B'00000000' ;CONFIGURA TODAS AS PORTAS DO GPIO (PINOS)
+Message[302]: Register in operand not in bank 0.  Ensure that bank bits are correct.
+00F0   0085           00565         MOVWF   TRISIO          ;COMO SAÍDAS
+Message[302]: Register in operand not in bank 0.  Ensure that bank bits are correct.
+00F1   019F           00566         CLRF    ANSEL           ;DEFINE PORTAS COMO Digital I/O
+00F2   3005           00567         MOVLW   B'00000101'
+Message[302]: Register in operand not in bank 0.  Ensure that bank bits are correct.
+00F3   0081           00568         MOVWF   OPTION_REG      ;DEFINE OPÇÕES DE OPERAÇÃO (TMR0 COM PSA DE 1:2)
+00F4   3000           00569         MOVLW   B'00000000'
+00F5   008B           00570         MOVWF   INTCON          ;DEFINE OPÇÕES DE INTERRUPÇÕES (SEM INTERRUPÇAO NA GP2)
+                      00571 
+00F6   1283           00572         BANK0                           ;RETORNA PARA O BANCO
+00F7   3007           00573         MOVLW   B'00000111'
+00F8   0099           00574         MOVWF   CMCON           ;DEFINE O MODO DE OPERAÇÃO DO COMPARADOR ANALÓGICO
+00F9   1505           00575         BSF             GPIO,GP2
+                      00576         
+                      00577 
+                      00578 ;* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+                      00579 ;*                     INICIALIZAÇÃO DAS VARIÁVEIS                 *
+                      00580 ;* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+                      00581 
+                      00582 ;* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+                      00583 ;*                     ROTINA PRINCIPAL                            *
+                      00584 ;* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+00FA                  00585 MAIN
+                      00586 
+00FA   3028           00587         MOVLW   .40
+00FB   00A4           00588         MOVWF   CONTADOR        ;CONTADOR DE BITS
+                      00589 
+00FC   1683           00590         BANK1                           
+00FD   3000           00591         MOVLW   B'00000000' ;MODO INICIAL DE ENVIO AO DHT11
+Message[302]: Register in operand not in bank 0.  Ensure that bank bits are correct.
+00FE   0085           00592         MOVWF   TRISIO          
+00FF   1283           00593         BANK0
+                      00594 
+0100   1105           00595         BCF     GPIO,GP2                ;GERA A DESCIDA 
+                      00596 
+0101   20E9           00597         CALL W_15MS                             ;ESPERA 19MS
+0102   20E3           00598         CALL W_4MS
+                      00599         
+0103   1505           00600         BSF             GPIO,GP2                ;ATIVA PARA ESPERAR A RESPOSTA DO DHT11
+                      00601         
+MPASM  5.51                      ATIV_3_1.ASM   10-18-2017  14:49:39         PAGE 13
+
+
+LOC  OBJECT CODE     LINE SOURCE TEXT
+  VALUE
+
+0104   1683           00602         BANK1
+0105   3004           00603         MOVLW   B'00000100'     ;MUDA PARA ESPERAR A RESPOSTA DO DHT11
+0106   3085           00604         MOVLW   TRISIO
+0107   1283           00605         BANK0  
+                      00606 
+                      00607 ;ESPERA 18 MILLISEGUNDOS
+                      00608 ;RESPOSTA EM ATE 40 MICROSSEGUNDOS
+                      00609 ;80 MICROSSEGUNDOS EM BAIXO E ALTO (2 VEZES)
+                      00610 
+0108                  00611 TEST_RESPONSE
+0108   1905           00612         BTFSC   GPIO,GP2
+0109   2908           00613         GOTO    TEST_RESPONSE 
+                      00614         
+010A   20D4           00615         CALL W_40US
+010B   20D4           00616         CALL W_40US                     ;ESPERA OS 80 uS EM BAIXO
+                      00617 
+010C   20D4           00618         CALL W_40US
+010D   20D4           00619         CALL W_40US                     ;ESPERA OS 80 uS EM ALTO
+                      00620 
+010E   20D4           00621         CALL W_40US                     ;ESPERA OS 50uS EM BAIXO
+                      00622 
+                      00623 
+                      00624 
+                      00625         ;AGORA VEM A PARTE DE VERIFICIAR OS TEMPOS!
+010F                  00626 CONTAGEM_BITS
+                      00627 
+                      00628 ;-------------------- PSA MODIFICADO ------------------
+010F   1683           00629         BANK1
+0110   3000           00630         MOVLW   B'00000000' ;PSA (1:2)
+Message[302]: Register in operand not in bank 0.  Ensure that bank bits are correct.
+0111   0081           00631         MOVWF   OPTION_REG
+0112   1283           00632         BANK0
+                      00633 
+0113   3000           00634         MOVLW   B'00000000' ;CONTAGEM COMEÇANDO EM ZERO
+0114   0081           00635         MOVWF   TMR0
+                      00636 
+                      00637 ;-------------------------------------------------------
+                      00638 
+0115                  00639 WAIT_TMR0
+0115   1905           00640         BTFSC   GPIO,GP2        ;ENQUANTO O SINAL NAO DESCER, ESPERE 
+0116   2915           00641         GOTO WAIT_TMR0
+                      00642 
+                      00643         ;APÓS A DESCIDA
+0117   3014           00644         MOVLW   .20
+Message[305]: Using default destination of 1 (file).
+0118   0281           00645         SUBWF   TMR0            ;ALTERA O CARRY PARA ZERO OU 1
+0119   207B           00646         CALL    DHT11   ;SE 1, ENTÃO O TEMPO FOI MENOR DO QUE 40 US (MARGEM DE ERRO), LOGO 0
+                      00647 
+                      00648 ;------------------- PSA ORIGINAL --------------------------
+011A   1683           00649         BANK1
+011B   3005           00650         MOVLW   B'00000101'
+Message[302]: Register in operand not in bank 0.  Ensure that bank bits are correct.
+011C   0081           00651         MOVWF   OPTION_REG      ;MUDA PARA O VALOR INICIAL
+MPASM  5.51                      ATIV_3_1.ASM   10-18-2017  14:49:39         PAGE 14
+
+
+LOC  OBJECT CODE     LINE SOURCE TEXT
+  VALUE
+
+011D   1283           00652         BANK0
+                      00653 
+011E   20D4           00654         CALL W_40US
+                      00655 ;-----------------------------------------------------------
+Message[305]: Using default destination of 1 (file).
+011F   0BA4           00656         DECFSZ  CONTADOR
+0120   290F           00657         GOTO    CONTAGEM_BITS   ;REPETE 40 VEZES PARA CADA BIT
+                      00658         
+0121   2081           00659         CALL    TRANSFORM_ASCII
+                      00660 
+                      00661 
+0122   28FA           00662         GOTO MAIN
+                      00663 
+                      00664 ;* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+                      00665 ;*                       FIM DO PROGRAMA                           *
+                      00666 ;* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+                      00667 
+                      00668         END
+MPASM  5.51                      ATIV_3_1.ASM   10-18-2017  14:49:39         PAGE 15
+
+
+SYMBOL TABLE
+  LABEL                             VALUE 
+
+ADCON0                            0000001F
+ADCS0                             00000004
+ADCS1                             00000005
+ADCS2                             00000006
+ADFM                              00000007
+ADIE                              00000006
+ADIF                              00000006
+ADON                              00000000
+ADRESH                            0000001E
+ADRESL                            0000009E
+ANS0                              00000000
+ANS1                              00000001
+ANS2                              00000002
+ANS3                              00000003
+ANSEL                             0000009F
+BANK0                             BCF STATUS,RP0
+BANK1                             BSF STATUS,RP0
+C                                 00000000
+CAL0                              00000002
+CAL1                              00000003
+CAL2                              00000004
+CAL3                              00000005
+CAL4                              00000006
+CAL5                              00000007
+CHECKSUM                          0000002A
+CHECK_FINAL0                      00000055
+CHECK_FINAL1                      0000006B
+CHS0                              00000002
+CHS1                              00000003
+CINV                              00000004
+CIS                               00000003
+CM0                               00000000
+CM1                               00000001
+CM2                               00000002
+CMCON                             00000019
+CMIE                              00000003
+CMIF                              00000003
+CONTADOR                          00000024
+CONTAGEM_BITS                     0000010F
+CONT_ASCII                        00000025
+COUNT                             00000023
+COUNT_RESET                       00000010
+COUT                              00000006
+DC                                00000001
+DHT11                             0000007B
+EEADR                             0000009B
+EECON1                            0000009C
+EECON2                            0000009D
+EEDAT                             0000009A
+EEDATA                            0000009A
+EEIE                              00000007
+EEIF                              00000007
+F                                 00000001
+MPASM  5.51                      ATIV_3_1.ASM   10-18-2017  14:49:39         PAGE 16
+
+
+SYMBOL TABLE
+  LABEL                             VALUE 
+
+FINAL_LCD0                        0000005B
+FINAL_LCD1                        00000071
+FSR                               00000004
+GIE                               00000007
+GO                                00000001
+GO_DONE                           00000001
+GO_NOT_DONE                       00000001
+GP0                               00000000
+GP1                               00000001
+GP2                               00000002
+GP3                               00000003
+GP4                               00000004
+GP5                               00000005
+GPIE                              00000003
+GPIF                              00000000
+GPIO                              00000005
+GPIO0                             00000000
+GPIO1                             00000001
+GPIO2                             00000002
+GPIO3                             00000003
+GPIO4                             00000004
+GPIO5                             00000005
+INDF                              00000000
+INICIO                            000000EE
+INTCON                            0000000B
+INTE                              00000004
+INTEDG                            00000006
+INTF                              00000001
+IOC                               00000096
+IOC0                              00000000
+IOC1                              00000001
+IOC2                              00000002
+IOC3                              00000003
+IOC4                              00000004
+IOC5                              00000005
+IOCB                              00000096
+IOCB0                             00000000
+IOCB1                             00000001
+IOCB2                             00000002
+IOCB3                             00000003
+IOCB4                             00000004
+IOCB5                             00000005
+IRP                               00000007
+LCD_EN                            GPIO,5
+LIMPA_T0FLAG                      0000000D
+MAIN                              000000FA
+NOT_BOD                           00000000
+NOT_BOR                           00000000
+NOT_DONE                          00000001
+NOT_GPPU                          00000007
+NOT_PD                            00000003
+NOT_POR                           00000001
+NOT_T1SYNC                        00000002
+MPASM  5.51                      ATIV_3_1.ASM   10-18-2017  14:49:39         PAGE 17
+
+
+SYMBOL TABLE
+  LABEL                             VALUE 
+
+NOT_TO                            00000004
+OPTION_REG                        00000081
+OSCCAL                            00000090
+PCL                               00000002
+PCLATH                            0000000A
+PCON                              0000008E
+PEIE                              00000006
+PIE1                              0000008C
+PIR1                              0000000C
+PRINT_RESULT                      000000CC
+PS0                               00000000
+PS1                               00000001
+PS2                               00000002
+PSA                               00000003
+RD                                00000000
+RP0                               00000005
+RP1                               00000006
+SAI_INT                           00000007
+SEND_LCD0                         00000050
+SEND_LCD1                         00000066
+SETUP                             00000013
+SR_CLK                            GPIO,0
+SR_CLOCK                          0000004D
+SR_DAT                            GPIO,4
+SR_SET                            00000058
+SR_SET1                           0000006E
+STATUS                            00000003
+STATUS_TEMP                       00000021
+SUBROTINA1                        0000000C
+SUBTRACT_PT                       000000CA
+SUBTRACT_PU                       000000C8
+SUBTRACT_T                        0000009E
+SUBTRACT_U                        000000B7
+T0CS                              00000005
+T0IE                              00000005
+T0IF                              00000002
+T0SE                              00000004
+T1CKPS0                           00000004
+T1CKPS1                           00000005
+T1CON                             00000010
+T1IE                              00000000
+T1IF                              00000000
+T1OSCEN                           00000003
+TEMPER_DEC                        00000029
+TEMPER_INT                        00000028
+TEST_RESPONSE                     00000108
+TMR0                              00000001
+TMR0IE                            00000005
+TMR0IF                            00000002
+TMR1                              0000000E
+TMR1CS                            00000001
+TMR1GE                            00000006
+TMR1H                             0000000F
+MPASM  5.51                      ATIV_3_1.ASM   10-18-2017  14:49:39         PAGE 18
+
+
+SYMBOL TABLE
+  LABEL                             VALUE 
+
+TMR1IE                            00000000
+TMR1IF                            00000000
+TMR1L                             0000000E
+TMR1ON                            00000000
+TRANSFORM_ASCII                   00000081
+TRISIO                            00000085
+TRISIO0                           00000000
+TRISIO1                           00000001
+TRISIO2                           00000002
+TRISIO3                           00000003
+TRISIO4                           00000004
+TRISIO5                           00000005
+UM_DEC                            00000027
+UM_INT                            00000026
+VCFG                              00000006
+VR0                               00000000
+VR1                               00000001
+VR2                               00000002
+VR3                               00000003
+VRCON                             00000099
+VREN                              00000007
+VRR                               00000005
+W                                 00000000
+WAIT_TMR0                         00000115
+WPU                               00000095
+WPU0                              00000000
+WPU1                              00000001
+WPU2                              00000002
+WPU4                              00000004
+WPU5                              00000005
+WR                                00000001
+WRD                               00000022
+WREN                              00000002
+WRERR                             00000003
+W_100US                           000000DA
+W_15MS                            000000E9
+W_1800US                          000000DD
+W_1800USCHECK                     000000DF
+W_40CHECK                         000000D6
+W_40US                            000000D4
+W_4MS                             000000E3
+W_4MSCHECK                        000000E5
+W_TEMP                            00000020
+Z                                 00000002
+_BODEN_OFF                        00003FBF
+_BODEN_ON                         00003FFF
+_BOREN_OFF                        00003FBF
+_BOREN_ON                         00003FFF
+_CONFIG                           00002007
+_CPD_OFF                          00003FFF
+_CPD_ON                           00003EFF
+_CP_OFF                           00003FFF
+_CP_ON                            00003F7F
+MPASM  5.51                      ATIV_3_1.ASM   10-18-2017  14:49:39         PAGE 19
+
+
+SYMBOL TABLE
+  LABEL                             VALUE 
+
+_DEVID1                           00002006
+_EC_OSC                           00003FFB
+_EXTRC_OSC_CLKOUT                 00003FFF
+_EXTRC_OSC_NOCLKOUT               00003FFE
+_FOSC_EC                          00003FFB
+_FOSC_EXTRCCLK                    00003FFF
+_FOSC_EXTRCIO                     00003FFE
+_FOSC_HS                          00003FFA
+_FOSC_INTRCCLK                    00003FFD
+_FOSC_INTRCIO                     00003FFC
+_FOSC_LP                          00003FF8
+_FOSC_XT                          00003FF9
+_HS_OSC                           00003FFA
+_IDLOC0                           00002000
+_IDLOC1                           00002001
+_IDLOC2                           00002002
+_IDLOC3                           00002003
+_INTRC_OSC_CLKOUT                 00003FFD
+_INTRC_OSC_NOCLKOUT               00003FFC
+_LP_OSC                           00003FF8
+_MCLRE_OFF                        00003FDF
+_MCLRE_ON                         00003FFF
+_PWRTE_OFF                        00003FFF
+_PWRTE_ON                         00003FEF
+_WDTE_OFF                         00003FF7
+_WDTE_ON                          00003FFF
+_WDT_OFF                          00003FF7
+_WDT_ON                           00003FFF
+_XT_OSC                           00003FF9
+__12F675                          00000001
+__DEBUG                           1
+
+
+MEMORY USAGE MAP ('X' = Used,  '-' = Unused)
+
+0000 : X---XXXXXXXXXXXX XXXXXXXXXXXXXXXX XXXXXXXXXXXXXXXX XXXXXXXXXXXXXXXX
+0040 : XXXXXXXXXXXXXXXX XXXXXXXXXXXXXXXX XXXXXXXXXXXXXXXX XXXXXXXXXXXXXXXX
+0080 : XXXXXXXXXXXXXXXX XXXXXXXXXXXXXXXX XXXXXXXXXXXXXXXX XXXXXXXXXXXXXXXX
+00C0 : XXXXXXXXXXXXXXXX XXXXXXXXXXXXXXXX XXXXXXXXXXXXXXXX XXXXXXXXXXXXXXXX
+0100 : XXXXXXXXXXXXXXXX XXXXXXXXXXXXXXXX XXX------------- ----------------
+2000 : -------X-------- ---------------- ---------------- ----------------
+
+All other memory blocks unused.
+
+Program Memory Words Used:   288
+Program Memory Words Free:   736
+
+
+MPASM  5.51                      ATIV_3_1.ASM   10-18-2017  14:49:39         PAGE 20
+
+
+
+
+
+Errors   :     0
+Warnings :     0 reported,     0 suppressed
+Messages :    25 reported,     0 suppressed
+
+

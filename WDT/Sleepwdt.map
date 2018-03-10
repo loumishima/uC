@@ -1,0 +1,46 @@
+MPLINK 4.49, Linker
+Linker Map File - Created Mon Nov 06 22:39:57 2017
+
+                                 Section Info
+                  Section       Type    Address   Location Size(Bytes)
+                ---------  ---------  ---------  ---------  ---------
+                   .org_0       code   0x000000    program   0x000000
+                   .org_1       code   0x000000    program   0x000002
+                   .org_2       code   0x000004    program   0x00005e
+  .config_2007_SLEEPWDT.O       code   0x002007    program   0x000002
+
+
+
+                              Program Memory Usage 
+                               Start         End      
+                           ---------   ---------      
+                            0x000000    0x000000      
+                            0x000004    0x000032      
+                            0x002007    0x002007      
+            49 out of 1158 program addresses used, program memory utilization is 4%
+
+
+
+                              Symbols - Sorted by Name
+                     Name    Address   Location    Storage File                     
+                ---------  ---------  ---------  --------- ---------                
+               CHECK_TMR0   0x000012    program     static C:\Users\LuizH\Documents\uC\Sleepwdt.ASM
+                   INICIO   0x000024    program     static C:\Users\LuizH\Documents\uC\Sleepwdt.ASM
+                   LIGHTS   0x000016    program     static C:\Users\LuizH\Documents\uC\Sleepwdt.ASM
+                     MAIN   0x00002f    program     static C:\Users\LuizH\Documents\uC\Sleepwdt.ASM
+                  SAI_INT   0x000007    program     static C:\Users\LuizH\Documents\uC\Sleepwdt.ASM
+                   TIMER0   0x00000c    program     static C:\Users\LuizH\Documents\uC\Sleepwdt.ASM
+
+
+
+                              Symbols - Sorted by Address
+                     Name    Address   Location    Storage File                     
+                ---------  ---------  ---------  --------- ---------                
+                  SAI_INT   0x000007    program     static C:\Users\LuizH\Documents\uC\Sleepwdt.ASM
+                   TIMER0   0x00000c    program     static C:\Users\LuizH\Documents\uC\Sleepwdt.ASM
+               CHECK_TMR0   0x000012    program     static C:\Users\LuizH\Documents\uC\Sleepwdt.ASM
+                   LIGHTS   0x000016    program     static C:\Users\LuizH\Documents\uC\Sleepwdt.ASM
+                   INICIO   0x000024    program     static C:\Users\LuizH\Documents\uC\Sleepwdt.ASM
+                     MAIN   0x00002f    program     static C:\Users\LuizH\Documents\uC\Sleepwdt.ASM
+
+

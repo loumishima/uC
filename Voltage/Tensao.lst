@@ -1,0 +1,1033 @@
+MPASM  5.51                        TENSAO.ASM   10-18-2017  9:40:40         PAGE  1
+
+
+LOC  OBJECT CODE     LINE SOURCE TEXT
+  VALUE
+
+                      00001 ;* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+                      00002 ;*              MODIFICAÇÕES PARA USO COM 12F675                   *
+                      00003 ;*                FEITAS PELO PROF. MARDSON                        *
+                      00004 ;*                    FEVEREIRO DE 2016                            *
+                      00005 ;* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+                      00006 
+                      00007 ;* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+                      00008 ;*                       NOME DO PROJETO                           *
+                      00009 ;*                           CLIENTE                               *
+                      00010 ;*         DESENVOLVIDO PELA MOSAICO ENGENHARIA E CONSULTORIA      *
+                      00011 ;*   VERSÃO: 1.0                           DATA: 17/06/03          *
+                      00012 ;* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+                      00013 ;*                     DESCRIÇÃO DO ARQUIVO                        *
+                      00014 ;*-----------------------------------------------------------------*
+                      00015 ;*   MODELO PARA O PIC 12F675                                      *
+                      00016 ;*                                                                 *
+                      00017 ;*                                                                 *
+                      00018 ;* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+                      00019 
+                      00020 ;* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+                      00021 ;*                     ARQUIVOS DE DEFINIÇÕES                      *
+                      00022 ;* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+                      00023 #INCLUDE <P12F675.INC>  ;ARQUIVO PADRÃO MICROCHIP PARA 12F675
+                      00001         LIST
+                      00002 
+                      00003 ;==========================================================================
+                      00004 ;  MPASM PIC12F675 processor include
+                      00005 ; 
+                      00006 ;  (c) Copyright 1999-2013 Microchip Technology, All rights reserved
+                      00007 ;==========================================================================
+                      00008 
+                      00366         LIST
+                      00024 
+2007   3FA4           00025         __CONFIG _BODEN_OFF & _CP_OFF & _PWRTE_ON & _WDT_OFF & _MCLRE_ON & _INTRC_OSC_NOCLKOUT
+                      00026 
+                      00027 ;* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+                      00028 ;*                    PAGINAÇÃO DE MEMÓRIA                         *
+                      00029 ;* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+                      00030 ;DEFINIÇÃO DE COMANDOS DE USUÁRIO PARA ALTERAÇÃO DA PÁGINA DE MEMÓRIA
+                      00031 #DEFINE BANK0   BCF STATUS,RP0  ;SETA BANK 0 DE MEMÓRIA
+                      00032 #DEFINE BANK1   BSF STATUS,RP0  ;SETA BANK 1 DE MAMÓRIA
+                      00033 
+                      00034 ;* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+                      00035 ;*                         VARIÁVEIS                               *
+                      00036 ;* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+                      00037 ; DEFINIÇÃO DOS NOMES E ENDEREÇOS DE TODAS AS VARIÁVEIS UTILIZADAS 
+                      00038 ; PELO SISTEMA
+                      00039 
+                      00040         CBLOCK  0x20    ;ENDEREÇO INICIAL DA MEMÓRIA DE
+                      00041                                         ;USUÁRIO
+  00000020            00042                 W_TEMP          ;REGISTRADORES TEMPORÁRIOS PARA USO
+  00000021            00043                 STATUS_TEMP     ;JUNTO ÀS INTERRUPÇÕES
+                      00044 
+MPASM  5.51                        TENSAO.ASM   10-18-2017  9:40:40         PAGE  2
+
+
+LOC  OBJECT CODE     LINE SOURCE TEXT
+  VALUE
+
+  00000022            00045                 WRD                     ;USADO PARA O PRINT             
+  00000023            00046                 COUNT           ;USADO PARA A DIVISÃO EM 4 BIT
+                      00047                 ;EXCLUSIVOS PARA O LCD
+                      00048                 
+  00000024            00049                 TEMP_ADH
+  00000025            00050                 TEMP_ADL
+                      00051 
+                      00052                 ;PARA A SOMA DAS LEITURAS
+                      00053 
+  00000026            00054                 AVG_ADH
+  00000027            00055                 AVG_ADL
+                      00056                         
+                      00057                 ;PARA A MEDIA DOS VALORES
+                      00058                 
+  00000028            00059                 AVG_COUNT       
+                      00060 
+                      00061         ENDC                    ;FIM DO BLOCO DE MEMÓRIA
+                      00062 ;* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+                      00063 ;*                        FLAGS INTERNOS                           *
+                      00064 ;* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+                      00065 ; DEFINIÇÃO DE TODOS OS FLAGS UTILIZADOS PELO SISTEMA
+                      00066 
+                      00067 ;* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+                      00068 ;*                         CONSTANTES                              *
+                      00069 ;* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+                      00070 ; DEFINIÇÃO DE TODAS AS CONSTANTES UTILIZADAS PELO SISTEMA
+                      00071         
+                      00072 
+                      00073 ;* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+                      00074 ;*                           ENTRADAS                              *
+                      00075 ;* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+                      00076 ; DEFINIÇÃO DE TODOS OS PINOS QUE SERÃO UTILIZADOS COMO ENTRADA
+                      00077 ; RECOMENDAMOS TAMBÉM COMENTAR O SIGNIFICADO DE SEUS ESTADOS (0 E 1)
+                      00078 
+                      00079 #DEFINE         SR_CLK          GPIO,0
+                      00080 #DEFINE         SR_DAT          GPIO,4
+                      00081 #DEFINE         LCD_EN          GPIO,5  
+                      00082 
+                      00083 ;* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+                      00084 ;*                           SAÍDAS                                *
+                      00085 ;* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+                      00086 ; DEFINIÇÃO DE TODOS OS PINOS QUE SERÃO UTILIZADOS COMO SAÍDA
+                      00087 ; RECOMENDAMOS TAMBÉM COMENTAR O SIGNIFICADO DE SEUS ESTADOS (0 E 1)
+                      00088 
+                      00089 ;* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+                      00090 ;*                       VETOR DE RESET                            *
+                      00091 ;* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+                      00092 
+                      00093         ORG     0x00                    ;ENDEREÇO INICIAL DE PROCESSAMENTO
+0000   2???           00094         GOTO    INICIO
+                      00095         
+                      00096 ;* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+                      00097 ;*                    INÍCIO DA INTERRUPÇÃO                        *
+MPASM  5.51                        TENSAO.ASM   10-18-2017  9:40:40         PAGE  3
+
+
+LOC  OBJECT CODE     LINE SOURCE TEXT
+  VALUE
+
+                      00098 ;* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+                      00099 ; ENDEREÇO DE DESVIO DAS INTERRUPÇÕES. A PRIMEIRA TAREFA É SALVAR OS
+                      00100 ; VALORES DE "W" E "STATUS" PARA RECUPERAÇÃO FUTURA
+                      00101 
+                      00102         ORG     0x04                    ;ENDEREÇO INICIAL DA INTERRUPÇÃO
+0004   00A0           00103         MOVWF   W_TEMP          ;COPIA W PARA W_TEMP
+0005   0E03           00104         SWAPF   STATUS,W
+0006   00A1           00105         MOVWF   STATUS_TEMP     ;COPIA STATUS PARA STATUS_TEMP
+                      00106 
+                      00107 ;* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+                      00108 ;*                    ROTINA DE INTERRUPÇÃO                        *
+                      00109 ;* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+                      00110 ; AQUI SERÁ ESCRITA AS ROTINAS DE RECONHECIMENTO E TRATAMENTO DAS
+                      00111 ; INTERRUPÇÕES
+                      00112 
+                      00113 ;* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+                      00114 ;*                 ROTINA DE SAÍDA DA INTERRUPÇÃO                  *
+                      00115 ;* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+                      00116 ; OS VALORES DE "W" E "STATUS" DEVEM SER RECUPERADOS ANTES DE 
+                      00117 ; RETORNAR DA INTERRUPÇÃO
+                      00118 
+0007                  00119 SAI_INT
+0007   0E21           00120         SWAPF   STATUS_TEMP,W
+0008   0083           00121         MOVWF   STATUS          ;MOVE STATUS_TEMP PARA STATUS
+0009   0EA0           00122         SWAPF   W_TEMP,F
+000A   0E20           00123         SWAPF   W_TEMP,W        ;MOVE W_TEMP PARA W
+000B   0009           00124         RETFIE
+                      00125 
+                      00126 ;* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+                      00127 ;*                       ROTINAS E SUBROTINAS                              *
+                      00128 ;* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+                      00129 ; CADA ROTINA OU SUBROTINA DEVE POSSUIR A DESCRIÇÃO DE FUNCIONAMENTO
+                      00130 ; E UM NOME COERENTE ÀS SUAS FUNÇÕES.
+                      00131 
+000C                  00132 LIMPA_T0FLAG
+                      00133 
+000C   110B           00134         BCF             INTCON,T0IF             ;LIMPA A FLAG
+000D   128B           00135         BCF             INTCON,T0IE             ;DESABILITA AS INTERRUPÇÕES
+                      00136 
+000E   0008           00137         RETURN
+                      00138 
+000F                  00139 COUNT_RESET                                     
+000F   3004           00140         MOVLW   .4
+0010   00A3           00141         MOVWF   COUNT
+                      00142 
+0011   0008           00143         RETURN
+0012                  00144 SETUP
+0012   2???           00145         CALL    COUNT_RESET                     ;QUANTIDADE DE ROTAÇÕES 
+                      00146 
+0013   2???           00147         CALL    W_15MS                          ;ESPERA > 15 MS 
+                      00148 
+0014   3030           00149         MOVLW   b'00110000'                     ;MANDA 0X30 PARA O LCD
+0015   00A2           00150         MOVWF   WRD
+MPASM  5.51                        TENSAO.ASM   10-18-2017  9:40:40         PAGE  4
+
+
+LOC  OBJECT CODE     LINE SOURCE TEXT
+  VALUE
+
+                      00151         
+0016   2???           00152         CALL    SEND_LCD0                       ;MANDA OP BIT A BIT PARA SR
+                      00153 ;******************** PALAVRA ENVIADA *********************
+0017   2???           00154         CALL    COUNT_RESET
+                      00155 
+0018   2???           00156         CALL    W_4MS                           ;ESPERA > 4 MS
+                      00157         
+0019   3030           00158         MOVLW   b'00110000'                     ;MANDA 0X30 PARA O LCD
+001A   00A2           00159         MOVWF   WRD
+                      00160         
+001B   2???           00161         CALL    SEND_LCD0               
+                      00162 ;******************** PALAVRA ENVIADA *********************
+001C   2???           00163         CALL COUNT_RESET
+                      00164 
+001D   2???           00165         CALL    W_100US                                 ;ESPERA > 100 US 
+                      00166         
+001E   3030           00167         MOVLW   b'00110000'                             ;MANDA 0X30 PARA O LCD
+001F   00A2           00168         MOVWF   WRD
+                      00169         
+0020   2???           00170         CALL    SEND_LCD0                               ;MANDA 0X30
+                      00171 ;******************** PALAVRA ENVIADA *********************
+0021   2???           00172         CALL COUNT_RESET
+                      00173         
+0022   2???           00174         CALL    W_40US                                  ;ESPERA > 40 US
+                      00175         
+0023   3020           00176         MOVLW   B'00100000'                                     
+0024   00A2           00177         MOVWF   WRD
+                      00178         
+0025   2???           00179         CALL    SEND_LCD0                               ;ESTABELECA COMUNICAÇÃO EM 4 VIAS(00010)
+                      00180 ;******************** PALAVRA ENVIADA *********************
+0026   2???           00181         CALL COUNT_RESET
+                      00182         
+0027   2???           00183         CALL    W_40US                                  ;ESPERA > 40 US
+                      00184         
+0028   3020           00185         MOVLW   B'00100000'                                     
+0029   00A2           00186         MOVWF   WRD
+                      00187         
+002A   2???           00188         CALL    SEND_LCD0                               ;MANDA CONDIÇÕES DE OPERAÇÃO (00010)
+                      00189 ;******************** PALAVRA ENVIADA *********************
+002B   2???           00190         CALL COUNT_RESET
+                      00191         
+002C   3040           00192         MOVLW   B'1000000'                                      
+002D   00A2           00193         MOVWF   WRD
+                      00194         
+002E   2???           00195         CALL    SEND_LCD0                               ;MANDA CONDIÇÕES DE OPERAÇÃO (01000)
+                      00196 ;******************** PALAVRA ENVIADA *********************
+002F   2???           00197         CALL COUNT_RESET
+                      00198         
+0030   2???           00199         CALL    W_40US
+                      00200                                                                         ;ESPERA > 40 US
+0031   3000           00201         MOVLW   B'00000000'                                     
+0032   00A2           00202         MOVWF   WRD                                             
+                      00203 
+MPASM  5.51                        TENSAO.ASM   10-18-2017  9:40:40         PAGE  5
+
+
+LOC  OBJECT CODE     LINE SOURCE TEXT
+  VALUE
+
+0033   2???           00204         CALL    SEND_LCD0                               ;LIMPA DISPLAY (00000)
+                      00205 ;******************** PALAVRA ENVIADA *********************
+0034   2???           00206         CALL COUNT_RESET
+                      00207 
+0035   3010           00208         MOVLW   B'00010000'                                     
+0036   00A2           00209         MOVWF   WRD                                             
+                      00210 
+0037   2???           00211         CALL    SEND_LCD0                               ;POSICIONA CURSOR (00001)
+                      00212 ;******************** PALAVRA ENVIADA *********************
+0038   2???           00213         CALL COUNT_RESET
+                      00214 
+0039   2???           00215         CALL    W_1800US                                ;ESPERA > 1.8 MS
+                      00216 
+003A   3000           00217         MOVLW   B'00000000'                                     
+003B   00A2           00218         MOVWF   WRD                                             
+                      00219 
+003C   2???           00220         CALL    SEND_LCD0                               ;LIMPA DISPLAY (00000)                          
+                                                    
+                      00221 ;******************** PALAVRA ENVIADA *********************
+003D   2???           00222         CALL COUNT_RESET
+                      00223 
+003E   3060           00224         MOVLW   B'1100000'                              
+003F   00A2           00225         MOVWF   WRD                                             
+                      00226 
+0040   2???           00227         CALL    SEND_LCD0                               ;LIGA SEM CURSOR (01100)                        
+                      00228 ;******************** PALAVRA ENVIADA *********************
+0041   2???           00229         CALL COUNT_RESET
+                      00230         
+0042   2???           00231         CALL    W_40US                                  ;ESPERA > 40 US
+                      00232                                                                 ;DESLOCAMENTO AUTOMATICO PARA A DIREITA
+0043   3000           00233         MOVLW   B'00000000'                                     
+0044   00A2           00234         MOVWF   WRD                                             
+                      00235 
+0045   2???           00236         CALL    SEND_LCD0                               ;LIMPA DISPLAY (00000)                          
+                                                    ;(00000) & (00110)
+                      00237 ;******************** PALAVRA ENVIADA *********************
+0046   2???           00238         CALL COUNT_RESET
+                      00239 
+0047   3060           00240         MOVLW   B'01100000'
+0048   00A2           00241         MOVWF   WRD                                             
+                      00242 
+0049   2???           00243         CALL    SEND_LCD0                               ;MODO OPERACIONAL 
+                      00244 ;******************** PALAVRA ENVIADA *********************
+004A   2???           00245         CALL    W_40US                                  ;ESPERA 40 US
+                      00246         
+004B   0008           00247         RETURN
+                      00248 ;* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+                      00249 ;*                                      CLOCK SHIFT REGISTER                       *
+                      00250 ;* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+                      00251 ;RESPONSAVEL POR MANDAR O DADO PARA O SHIFT REGISTER
+                      00252 ;SEM ELE O DADO NÃO É ENVIADO
+004C                  00253 SR_CLOCK
+                      00254 
+MPASM  5.51                        TENSAO.ASM   10-18-2017  9:40:40         PAGE  6
+
+
+LOC  OBJECT CODE     LINE SOURCE TEXT
+  VALUE
+
+004C   1405           00255         BSF     SR_CLK
+004D   1005           00256         BCF     SR_CLK
+                      00257 
+004E   0008           00258         RETURN
+                      00259 ;* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+                      00260 ;*                                      MANDAR P/ SR (RS = 0)                      *
+                      00261 ;* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+                      00262 ;PARA COMANDOS OPERACIONAIS, O BIT RS DO LCD DEVE SER ZERO
+                      00263 
+004F                  00264 SEND_LCD0                                               ;MANDA INSTRUÇÕES (RS = 0
+                      00265 
+                      00266 
+Message[305]: Using default destination of 1 (file).
+004F   0DA2           00267         RLF             WRD                                     ;BIT NO SR VIA CARRY
+                      00268                                                                 ;(FALTA VER SE É BIG ENDIAN OU LITTLE EN
+                            DIAN)
+                      00269 
+0050   1803           00270         BTFSC   STATUS,C                        ;VERIFICA Q VALOR VAI SER MANDADO (0 OU 1)
+                      00271                                                                 ;PULA SE CARRY = 0
+0051   2???           00272         GOTO    SR_SET                          ;MANDA 1 AO SR
+                      00273         
+0052   1205           00274         BCF             SR_DAT                          ;MANDA 0 AO SR
+0053   2???           00275         CALL    SR_CLOCK
+                      00276         
+0054                  00277 CHECK_FINAL0
+0054   0BA3           00278         DECFSZ  COUNT,1
+0055   2???           00279         GOTO    SEND_LCD0
+                      00280         
+0056   2???           00281         GOTO    FINAL_LCD0
+                      00282 
+0057                  00283 SR_SET
+0057   1605           00284         BSF             SR_DAT                          ;MANDA 1 AO SR
+0058   2???           00285         CALL    SR_CLOCK
+                      00286 
+0059   2???           00287         GOTO    CHECK_FINAL0                    ;VOLTA AO INÍCIO
+                      00288 
+005A                  00289 FINAL_LCD0
+005A   1205           00290         BCF             SR_DAT          ; ENVIA RS = 0 (OPERAÇÃO)
+005B   2???           00291         CALL    SR_CLOCK        
+                      00292         
+005C   1605           00293         BSF             SR_DAT          ; ENVIA BACKLIGHT = 1 (LUZ DE FUNDO)
+005D   2???           00294         CALL    SR_CLOCK
+                      00295         
+005E   1205           00296         BCF             SR_DAT          ;TESTE
+005F   2???           00297         CALL    SR_CLOCK        ; PREENCHE COM QUALQUER COISA (DON'T CARE)
+0060   2???           00298         CALL    SR_CLOCK
+                      00299 
+0061   1685           00300         BSF             LCD_EN
+0062   0000           00301         NOP                                     ; PULSO DE LCD (CASO NÃO PEGUE, TENTAR INVERTER ESSES VA
+                            LORES)
+0063   1285           00302         BCF             LCD_EN
+                      00303 
+0064   0008           00304         RETURN
+MPASM  5.51                        TENSAO.ASM   10-18-2017  9:40:40         PAGE  7
+
+
+LOC  OBJECT CODE     LINE SOURCE TEXT
+  VALUE
+
+                      00305 
+                      00306 ;* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+                      00307 ;*                                      MANDAR P/ SR (RS = 1)                      *
+                      00308 ;* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+                      00309 ;PARA ENVIO DE DADOS (CARACTERES), O BIT RS DO LCD DEVE SER UM
+                      00310 
+0065                  00311 SEND_LCD1                                               ;MANDA INSTRUÇÕES (RS = 0
+                      00312 
+                      00313         
+Message[305]: Using default destination of 1 (file).
+0065   0DA2           00314         RLF             WRD                                     ;BIT NO SR VIA CARRY
+                      00315                                                                 ;(FALTA VER SE É BIG ENDIAN OU LITTLE EN
+                            DIAN)
+                      00316 
+0066   1803           00317         BTFSC   STATUS,C                        ;VERIFICA Q VALOR VAI SER MANDADO (0 OU 1)
+                      00318                                                                 ;PULA SE CARRY = 0
+0067   2???           00319         GOTO    SR_SET1                         ;MANDA 1 AO SR
+                      00320         
+0068   1205           00321         BCF             SR_DAT                          ;MANDA 0 AO SR
+0069   2???           00322         CALL    SR_CLOCK
+                      00323 
+006A                  00324 CHECK_FINAL1    
+006A   0BA3           00325         DECFSZ  COUNT,1                         ;DECREMENTA
+                      00326         
+006B   2???           00327         GOTO    SEND_LCD1
+006C   2???           00328         GOTO    FINAL_LCD1      
+                      00329 
+006D                  00330 SR_SET1
+006D   1605           00331         BSF             SR_DAT                          ;MANDA 0 AO SR
+006E   2???           00332         CALL    SR_CLOCK
+                      00333 
+006F   2???           00334         GOTO    CHECK_FINAL1                    ;VOLTA AO INÍCIO
+                      00335 
+0070                  00336 FINAL_LCD1
+                      00337 
+0070   1605           00338         BSF             SR_DAT          ; ENVIA RS = 1 (CARACTERE)
+0071   2???           00339         CALL    SR_CLOCK        
+                      00340         
+0072   1605           00341         BSF             SR_DAT          ; ENVIA BACKLIGHT = 1 (LUZ DE FUNDO)
+0073   2???           00342         CALL    SR_CLOCK
+                      00343 
+0074   2???           00344         CALL    SR_CLOCK        ; PREENCHE COM QUALQUER COISA (DON'T CARE)
+0075   2???           00345         CALL    SR_CLOCK
+                      00346 
+0076   1685           00347         BSF             LCD_EN
+0077   0000           00348         NOP                                     ; PULSO DE LEITURA DO LCD
+0078   1285           00349         BCF             LCD_EN                  
+                      00350 
+0079   0008           00351         RETURN
+                      00352 
+007A                  00353 DEC2ASCII
+007A   0826           00354         MOVFW   AVG_ADH
+007B   3E30           00355         ADDLW   .48
+MPASM  5.51                        TENSAO.ASM   10-18-2017  9:40:40         PAGE  8
+
+
+LOC  OBJECT CODE     LINE SOURCE TEXT
+  VALUE
+
+                      00356         
+007C   00A2           00357         MOVWF   WRD                                     ;VALOR ASCII EM DECIMAL 
+                      00358         
+007D   2???           00359         CALL    COUNT_RESET                     ;NECESSÁRIO MANDAR A MSG 2 VEZES AO LCD
+007E   2???           00360         CALL    SEND_LCD1                       ;1 - PARTE MAIS SIGNIFICATIVA
+007F   2???           00361         CALL    COUNT_RESET     
+0080   2???           00362         CALL    SEND_LCD1                       ;2 - PARTE MENOS SIGNIFICATIVA
+                      00363 
+0081   0008           00364         RETURN  
+                      00365 
+                      00366 ;* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+                      00367 ;*                                              DELAYS                             *
+                      00368 ;* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+                      00369 ;TEMPOS MINIMOS DE DELAY, COMO É PRECISO OBEDECER APENAS AO TEMPO MÍNIMO
+                      00370 ;AS FUNÇÕES APRESENTAM VALORES MAIORES DO QUE OS NOMES DE SUAS SUBROTINAS
+                      00371 ;FACILITA NA REUTILIZAÇÃO DE SUBROTINAS
+                      00372 ;EX.: DELAY 100 MS = 2 * 40 MS  (TEMPO REAL =  80 uS)
+                      00373  
+0082                  00374 W_40US                                          ;TEMPO REAL =  80 uS
+                      00375 
+0082   30FE           00376         MOVLW   .254                    ;ATRIBUI O VALOR NO TMR0
+0083   0081           00377         MOVWF   TMR0
+                      00378 
+0084                  00379 W_40CHECK
+                      00380 
+0084   1D0B           00381         BTFSS   INTCON,T0IF             ;VERIFICA SE CONTADOR ESTOUROU,SENAO,CONTINUA NO LOOP
+0085   2???           00382         GOTO    W_40CHECK               
+0086   2???           00383         CALL    LIMPA_T0FLAG
+                      00384 
+0087   0008           00385         RETURN
+                      00386 
+0088                  00387 W_100US                                         ;TEMPO REAL = 165 uS
+                      00388         
+0088   2???           00389         CALL W_40US                             
+0089   2???           00390         CALL W_40US                     
+                      00391                                                         
+                      00392 
+008A   0008           00393         RETURN
+                      00394 
+008B                  00395 W_1800US                                        ;TEMPO REAL = 1.875 mS
+008B   30E2           00396         MOVLW   .226                    ;ATRIBUI O VALOR NO TMR0
+008C   0081           00397         MOVWF   TMR0
+                      00398 
+008D                  00399 W_1800USCHECK                           
+                      00400 
+008D   1D0B           00401         BTFSS   INTCON,T0IF             ;VERIFICA SE CONTADOR ESTOUROU,SENAO,CONTINUA NO LOOP
+008E   2???           00402         GOTO    W_1800USCHECK           
+008F   2???           00403         CALL    LIMPA_T0FLAG
+                      00404 
+0090   0008           00405         RETURN
+                      00406 
+0091                  00407 W_4MS                                           ;TEMPO REAL = 4.112 mS
+0091   30BF           00408         MOVLW   .191                    ;ATRIBUI O VALOR NO TMR0
+MPASM  5.51                        TENSAO.ASM   10-18-2017  9:40:40         PAGE  9
+
+
+LOC  OBJECT CODE     LINE SOURCE TEXT
+  VALUE
+
+0092   0081           00409         MOVWF   TMR0
+                      00410 
+0093                  00411 W_4MSCHECK                              
+                      00412 
+0093   1D0B           00413         BTFSS   INTCON,T0IF             ;VERIFICA SE CONTADOR ESTOUROU,SENAO,CONTINUA NO LOOP
+0094   2???           00414         GOTO    W_4MSCHECK              
+0095   2???           00415         CALL    LIMPA_T0FLAG
+0096   0008           00416         RETURN
+                      00417 
+0097                  00418 W_15MS                                          ;TEMPO REAL = 16.452 mS
+0097   2???           00419         CALL W_4MS
+0098   2???           00420         CALL W_4MS
+0099   2???           00421         CALL W_4MS
+009A   2???           00422         CALL W_4MS
+                      00423         
+009B   0008           00424         RETURN
+                      00425 ;* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+                      00426 ;*                     INICIO DO PROGRAMA                          *
+                      00427 ;* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+                      00428         
+009C                  00429 INICIO
+009C   1683           00430         BANK1                           ;ALTERA PARA O BANCO 1
+009D   3004           00431         MOVLW   B'00000100' ;CONFIGURA TODAS AS PORTAS DO GPIO (PINOS)
+Message[302]: Register in operand not in bank 0.  Ensure that bank bits are correct.
+009E   0085           00432         MOVWF   TRISIO          ;GP2 = ENTRADA PARA GERAR ALTA IMPEDÂNCIA (AD)
+                      00433         
+009F   3014           00434         MOVLW   B'00010100'
+Message[302]: Register in operand not in bank 0.  Ensure that bank bits are correct.
+00A0   009F           00435         MOVWF   ANSEL           ;DEFINE GP2 COMO CONVERSOR AD E FREQUENCIA DE CAPTURA = FOSC/8
+                      00436 
+00A1   3005           00437         MOVLW   B'00000101'
+Message[302]: Register in operand not in bank 0.  Ensure that bank bits are correct.
+00A2   0081           00438         MOVWF   OPTION_REG      ;DEFINE OPÇÕES DE OPERAÇÃO
+00A3   3000           00439         MOVLW   B'00000000'
+00A4   008B           00440         MOVWF   INTCON          ;DEFINE OPÇÕES DE INTERRUPÇÕES
+00A5   1283           00441         BANK0                           ;RETORNA PARA O BANCO
+00A6   3007           00442         MOVLW   B'00000111'
+00A7   0099           00443         MOVWF   CMCON           ;DEFINE O MODO DE OPERAÇÃO DO COMPARADOR ANALÓGICO
+                      00444 
+00A8   3009           00445         MOVLW   B'00001001'
+00A9   009F           00446         MOVWF   ADCON0          ; CONVERSOR AD
+                      00447 
+00AA   0185           00448         CLRF    GPIO
+00AB   2???           00449         CALL    SETUP
+                      00450 ;* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+                      00451 ;*                     INICIALIZAÇÃO DAS VARIÁVEIS                 *
+                      00452 ;* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+                      00453 
+                      00454 ;* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+                      00455 ;*                     ROTINA PRINCIPAL                            *
+                      00456 ;* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+00AC                  00457 MAIN
+                      00458 
+MPASM  5.51                        TENSAO.ASM   10-18-2017  9:40:40         PAGE 10
+
+
+LOC  OBJECT CODE     LINE SOURCE TEXT
+  VALUE
+
+                      00459         ;LIMPEZA DOS REGISTRADORES
+                      00460 
+00AC   01A4           00461         CLRF TEMP_ADH
+00AD   01A5           00462         CLRF TEMP_ADL
+                      00463 
+00AE   01A6           00464         CLRF AVG_ADH
+00AF   01A7           00465         CLRF AVG_ADL
+                      00466 
+00B0   3020           00467         MOVLW   .32                     ;VALOR REAL (32)
+00B1   00A8           00468         MOVWF   AVG_COUNT
+                      00469         
+                      00470         ;INICIALIZAÇÃO
+                      00471 
+00B2                  00472 AD      
+00B2   149F           00473         BSF ADCON0, 1                   ;INICIA CONVERSÃO AD
+                      00474 
+                      00475 
+00B3                  00476 FINAL_AD
+00B3   189F           00477         BTFSC   ADCON0,1                ;VERIFICA SE A CONVERSÃO ACABOU
+00B4   2???           00478         GOTO    FINAL_AD
+                      00479 
+00B5   081E           00480         MOVFW   ADRESH                  ;CAPTURA O VALOR DE ADRESH
+Message[305]: Using default destination of 1 (file).
+00B6   07A5           00481         ADDWF   TEMP_ADL                ;SOMA NO MENOS SIGNIFICATIVO
+                      00482 
+00B7   1803           00483         BTFSC   STATUS, C               ;SE CARRY FOR ZERO ENTAO NAO HOUVE ESTOURO 
+Message[305]: Using default destination of 1 (file).
+00B8   0AA4           00484         INCF    TEMP_ADH                ;SENAO, ENTAO INCREMENTA O TEMP_ADH                             
+                      00485 
+Message[305]: Using default destination of 1 (file).
+00B9   0BA8           00486         DECFSZ  AVG_COUNT               ;CONTAGEM DE VALORES (32 MAX)
+00BA   2???           00487         GOTO    AD                              ;VOLTA PRO ESTAGIO DE CAPTURA
+                      00488                                                         
+                      00489 ;----------------- TESTE 1 - SOMATORIO (OK!) -------------------------------
+                      00490         
+00BB   3005           00491         MOVLW   .5                                                      ;VALOR TENSÃO MÁXIMA
+00BC   00A8           00492         MOVWF   AVG_COUNT
+                      00493 
+00BD                  00494 MEDIA                                           
+Message[305]: Using default destination of 1 (file).
+00BD   0CA4           00495         RRF             TEMP_ADH                                        ;FIM DAS 32 CONTAGENS, HORA DE F
+                            AZER A MEDIA
+Message[305]: Using default destination of 1 (file).
+00BE   0CA5           00496         RRF             TEMP_ADL                                                
+                      00497         
+00BF   1003           00498         BCF             STATUS,C                                        ;GARANTIR Q O BIT MENOS SIGNIFIC
+                            ATIVO NAO INTERFIRA
+                      00499 
+Message[305]: Using default destination of 1 (file).
+00C0   0BA8           00500         DECFSZ  AVG_COUNT                                       
+00C1   2???           00501         GOTO    MEDIA
+                      00502 ;-------------------- TESTE 2 - MEDIA(OK!) -------------------- 
+                      00503                                                                                 ;ACABOU A DIVISAO (MEDIA
+MPASM  5.51                        TENSAO.ASM   10-18-2017  9:40:40         PAGE 11
+
+
+LOC  OBJECT CODE     LINE SOURCE TEXT
+  VALUE
+
+                            )
+                      00504                                                                                 ;REGRA DE 3 PARA A TENSÃ
+                            O (MULTIPLICA POR 5)
+00C2   0825           00505         MOVFW   TEMP_ADL
+00C3   00A7           00506         MOVWF   AVG_ADL                                         ;MOVE O DADO PARA OUTRO REGISTRADOR
+                      00507 
+00C4   3002           00508         MOVLW   .2
+00C5   00A8           00509         MOVWF   AVG_COUNT
+                      00510 
+00C6                  00511 ROTATION_5
+Message[305]: Using default destination of 1 (file).
+00C6   0DA7           00512         RLF             AVG_ADL                                         ;MULTIPLICA POR 2
+Message[305]: Using default destination of 1 (file).
+00C7   0DA6           00513         RLF             AVG_ADH         
+                      00514 
+00C8   1003           00515         BCF             STATUS,C
+                      00516 
+Message[305]: Using default destination of 1 (file).
+00C9   0BA8           00517         DECFSZ  AVG_COUNT
+00CA   2???           00518         GOTO    ROTATION_5
+                      00519 
+00CB   0825           00520         MOVFW   TEMP_ADL
+Message[305]: Using default destination of 1 (file).
+00CC   07A7           00521         ADDWF   AVG_ADL                                         ;SOMA FINAL
+                      00522         
+00CD   1803           00523         BTFSC   STATUS,C                                        ;VERIFICA O CARRY
+Message[305]: Using default destination of 1 (file).
+00CE   0AA6           00524         INCF    AVG_ADH                                         ;SE 1, SOMA AO MAIS SIGNIFICATIVO
+                      00525 
+                      00526 ;-------------------------- TESTE 3 - PRIMEIRO DIGITO SIGNIFICATIVO(OK! --------------
+                      00527 
+                      00528 
+                      00529         ;AQUI O AVG_ADH É O PRIMEIRO VALOR Q QUEREMOS ENTÃO:
+                      00530         ;MANDA O VALOR EM AVG_ADH PARA O CONVERSOR ASCII E PRINTA NO LCD
+                      00531         ;PRINTA O . ANTES DE ACHAR O PROXIMO VALOR
+                      00532 
+00CF   0826           00533         MOVFW   AVG_ADH
+00D0   2???           00534         CALL    DEC2ASCII
+                      00535         
+                      00536 ;PRINT "."
+00D1   302E           00537         MOVLW   '.'
+00D2   00A2           00538         MOVWF   WRD
+                      00539         
+00D3   01A6           00540         CLRF    AVG_ADH
+                      00541         
+00D4   2???           00542         CALL    COUNT_RESET                     ;NECESSÁRIO MANDAR A MSG 2 VEZES AO LCD
+00D5   2???           00543         CALL    SEND_LCD1                       ;1 - PARTE MAIS SIGNIFICATIVA
+00D6   2???           00544         CALL    COUNT_RESET     
+00D7   2???           00545         CALL    SEND_LCD1                       ;2 - PARTE MENOS SIGNIFICATIVA
+                      00546 
+                      00547 ;INICIALIZAÇÃO PARA REGRA DE 3
+00D8   0827           00548         MOVFW   AVG_ADL
+00D9   00A5           00549         MOVWF   TEMP_ADL
+MPASM  5.51                        TENSAO.ASM   10-18-2017  9:40:40         PAGE 12
+
+
+LOC  OBJECT CODE     LINE SOURCE TEXT
+  VALUE
+
+                      00550         
+00DA   3003           00551         MOVLW   .3
+00DB   00A8           00552         MOVWF   AVG_COUNT
+                      00553 
+00DC                  00554 ROTATION_10     ;(MULTIPLICAÇÃO POR 8)
+Message[305]: Using default destination of 1 (file).
+00DC   0DA7           00555         RLF             AVG_ADL                                         ;MULTIPLICA POR 2
+Message[305]: Using default destination of 1 (file).
+00DD   0DA6           00556         RLF             AVG_ADH         
+                      00557 
+00DE   1003           00558         BCF             STATUS,C
+                      00559 
+Message[305]: Using default destination of 1 (file).
+00DF   0BA8           00560         DECFSZ  AVG_COUNT
+00E0   2???           00561         GOTO    ROTATION_10
+                      00562 
+                      00563 ;PRIMEIRA SOMA
+                      00564 
+00E1   0825           00565         MOVFW   TEMP_ADL
+Message[305]: Using default destination of 1 (file).
+00E2   07A7           00566         ADDWF   AVG_ADL
+                      00567 
+00E3   1803           00568         BTFSC   STATUS,C
+Message[305]: Using default destination of 1 (file).
+00E4   0AA6           00569         INCF    AVG_ADH
+                      00570 
+                      00571 ;SEGUNDA SOMA
+                      00572         
+00E5   0825           00573         MOVFW   TEMP_ADL
+Message[305]: Using default destination of 1 (file).
+00E6   07A7           00574         ADDWF   AVG_ADL
+                      00575 
+00E7   1803           00576         BTFSC   STATUS,C
+Message[305]: Using default destination of 1 (file).
+00E8   0AA6           00577         INCF    AVG_ADH
+                      00578         
+                      00579 
+                      00580 ;REGISTRADOR MAIS SIGNIFICATIVO VAI SER O SEGUNDO ELEMENTO (OK!)
+00E9   0826           00581         MOVFW   AVG_ADH
+00EA   2???           00582         CALL    DEC2ASCII
+                      00583 ;SE QUISER, PODE ADICIONAR MAIS UM DIGITO SIGNIFICATIVO (INTERESSANTE!)
+                      00584 
+                      00585 ;PRINT V ( VOLTS )
+                      00586         
+00EB   3056           00587         MOVLW   'V'
+00EC   00A2           00588         MOVWF   WRD
+                      00589         
+00ED   01A6           00590         CLRF    AVG_ADH
+                      00591         
+00EE   2???           00592         CALL    COUNT_RESET                     ;NECESSÁRIO MANDAR A MSG 2 VEZES AO LCD
+00EF   2???           00593         CALL    SEND_LCD1                       ;1 - PARTE MAIS SIGNIFICATIVA
+00F0   2???           00594         CALL    COUNT_RESET     
+00F1   2???           00595         CALL    SEND_LCD1                       ;2 - PARTE MENOS SIGNIFICATIVA
+MPASM  5.51                        TENSAO.ASM   10-18-2017  9:40:40         PAGE 13
+
+
+LOC  OBJECT CODE     LINE SOURCE TEXT
+  VALUE
+
+                      00596 
+                      00597 
+                      00598 ;RESPONSÁVEL POR MANDAR AS LETRAS A SEREM EXPOSTAS
+                      00599 
+                      00600 ;       MOVLW   'H'                                     ;GUARDA AS LETRAS NO REGISTRADOR
+                      00601 ;       MOVWF   WRD     
+                      00602         
+                      00603 ;       CALL    COUNT_RESET                     ;NECESSÁRIO MANDAR A MSG 2 VEZES AO LCD
+                      00604 ;       CALL    SEND_LCD1                       ;1 - PARTE MAIS SIGNIFICATIVA
+                      00605 ;       CALL    W_1800US
+                      00606 ;       CALL    COUNT_RESET     
+                      00607 ;       CALL    SEND_LCD1                       ;2 - PARTE MENOS SIGNIFICATIVA
+                      00608 ;       CALL    W_1800US
+                      00609 
+                      00610 
+                      00611         ;SE ROTACIONAR MAIS UMA VEZ VOLTA AO NUMERO INICIAL (DESNCESSÁRIO [$])
+                      00612 ;-------------------- ALGORITMO ---------------------
+                      00613 
+                      00614 ;1 - INICIALIZAR O LCD ( OK ) SUBFUNCAO - SETUP
+                      00615 ;2 - INICIAR A CONVERSAO AD NA PORTA GP2
+                      00616 ;3 - CADA CAPTURA DEVE SE SOMAR A UM REGISTRADOR
+                      00617 ;       3.1 - A SOMA UTILIZA DOIS REGISTRADORES
+                      00618 ;                       SOMA ESSE VALOR AO REGISTRADOR
+                      00619 ;                       SE CARRY ATIVAR, SOMA-SE 1 AO OUTRO REGISTRADOR
+                      00620 ;4 - TIRA-SE A MEDIA DOS VALORES SE DIVIDINDO POR 32
+                      00621 ;       4.1 - 5 ROTAÇÕES PARA A DIREITA
+                      00622 ;       4.2 - NECESSARIO REALIZAR REGRA DE 3 PARA TRANSFORMAR NOVAMENTE EM VOLTS
+                      00623 ;                       256 --------- 5 (DUAS ROTAÇÕES + UMA SOMA)
+                      00624 ;                       BIT  -------- ?
+                      00625 ;                       TAMBEM UTILIZA-SE DE DOIS REGISTRADORES
+                      00626 ;                       PARTE MAIS SIGNIFICATIVA INDICA O NUMERO ANTES DO PONTO (EX.: "2".0 V)
+                      00627 ;       4.3 - NECESSARIO O VALOR COM UMA CASA DECIMAL DE PRECISAO
+                      00628 ;                       REALIZA-SE OUTRA REGRA DE 3
+                      00629 ;                       256 --------- 10 (TRES ROTAÇÕES + DUAS SOMAS COM SI MESMO)
+                      00630 ;                       BIT --------- ?
+                      00631 ;                       ASSIM O REGISTRADOR MAIS SIGNIFICATIVO INDICA O PROXIMO VALOR (EX.: 2."0" v)
+                      00632 ;5 - REALIZA-SE A CONVERSÃO BINÁRIO ASCII
+                      00633 ;6 - PRINT LCD
+                      00634 
+                      00635 
+                      00636 
+                      00637 
+                      00638 ;* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+                      00639 ;*                       FIM DO PROGRAMA                           *
+                      00640 ;* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+                      00641 
+3FA4                  00642         END
+MPASM  5.51                        TENSAO.ASM   10-18-2017  9:40:40         PAGE 14
+
+
+SYMBOL TABLE
+  LABEL                             VALUE 
+
+AD                                000000B2
+ADCON0                            0000001F
+ADCS0                             00000004
+ADCS1                             00000005
+ADCS2                             00000006
+ADFM                              00000007
+ADIE                              00000006
+ADIF                              00000006
+ADON                              00000000
+ADRESH                            0000001E
+ADRESL                            0000009E
+ANS0                              00000000
+ANS1                              00000001
+ANS2                              00000002
+ANS3                              00000003
+ANSEL                             0000009F
+AVG_ADH                           00000026
+AVG_ADL                           00000027
+AVG_COUNT                         00000028
+BANK0                             BCF STATUS,RP0
+BANK1                             BSF STATUS,RP0
+C                                 00000000
+CAL0                              00000002
+CAL1                              00000003
+CAL2                              00000004
+CAL3                              00000005
+CAL4                              00000006
+CAL5                              00000007
+CHECK_FINAL0                      00000054
+CHECK_FINAL1                      0000006A
+CHS0                              00000002
+CHS1                              00000003
+CINV                              00000004
+CIS                               00000003
+CM0                               00000000
+CM1                               00000001
+CM2                               00000002
+CMCON                             00000019
+CMIE                              00000003
+CMIF                              00000003
+COUNT                             00000023
+COUNT_RESET                       0000000F
+COUT                              00000006
+DC                                00000001
+DEC2ASCII                         0000007A
+EEADR                             0000009B
+EECON1                            0000009C
+EECON2                            0000009D
+EEDAT                             0000009A
+EEDATA                            0000009A
+EEIE                              00000007
+EEIF                              00000007
+F                                 00000001
+MPASM  5.51                        TENSAO.ASM   10-18-2017  9:40:40         PAGE 15
+
+
+SYMBOL TABLE
+  LABEL                             VALUE 
+
+FINAL_AD                          000000B3
+FINAL_LCD0                        0000005A
+FINAL_LCD1                        00000070
+FSR                               00000004
+GIE                               00000007
+GO                                00000001
+GO_DONE                           00000001
+GO_NOT_DONE                       00000001
+GP0                               00000000
+GP1                               00000001
+GP2                               00000002
+GP3                               00000003
+GP4                               00000004
+GP5                               00000005
+GPIE                              00000003
+GPIF                              00000000
+GPIO                              00000005
+GPIO0                             00000000
+GPIO1                             00000001
+GPIO2                             00000002
+GPIO3                             00000003
+GPIO4                             00000004
+GPIO5                             00000005
+INDF                              00000000
+INICIO                            0000009C
+INTCON                            0000000B
+INTE                              00000004
+INTEDG                            00000006
+INTF                              00000001
+IOC                               00000096
+IOC0                              00000000
+IOC1                              00000001
+IOC2                              00000002
+IOC3                              00000003
+IOC4                              00000004
+IOC5                              00000005
+IOCB                              00000096
+IOCB0                             00000000
+IOCB1                             00000001
+IOCB2                             00000002
+IOCB3                             00000003
+IOCB4                             00000004
+IOCB5                             00000005
+IRP                               00000007
+LCD_EN                            GPIO,5
+LIMPA_T0FLAG                      0000000C
+MAIN                              000000AC
+MEDIA                             000000BD
+NOT_BOD                           00000000
+NOT_BOR                           00000000
+NOT_DONE                          00000001
+NOT_GPPU                          00000007
+NOT_PD                            00000003
+MPASM  5.51                        TENSAO.ASM   10-18-2017  9:40:40         PAGE 16
+
+
+SYMBOL TABLE
+  LABEL                             VALUE 
+
+NOT_POR                           00000001
+NOT_T1SYNC                        00000002
+NOT_TO                            00000004
+OPTION_REG                        00000081
+OSCCAL                            00000090
+PCL                               00000002
+PCLATH                            0000000A
+PCON                              0000008E
+PEIE                              00000006
+PIE1                              0000008C
+PIR1                              0000000C
+PS0                               00000000
+PS1                               00000001
+PS2                               00000002
+PSA                               00000003
+RD                                00000000
+ROTATION_10                       000000DC
+ROTATION_5                        000000C6
+RP0                               00000005
+RP1                               00000006
+SAI_INT                           00000007
+SEND_LCD0                         0000004F
+SEND_LCD1                         00000065
+SETUP                             00000012
+SR_CLK                            GPIO,0
+SR_CLOCK                          0000004C
+SR_DAT                            GPIO,4
+SR_SET                            00000057
+SR_SET1                           0000006D
+STATUS                            00000003
+STATUS_TEMP                       00000021
+T0CS                              00000005
+T0IE                              00000005
+T0IF                              00000002
+T0SE                              00000004
+T1CKPS0                           00000004
+T1CKPS1                           00000005
+T1CON                             00000010
+T1IE                              00000000
+T1IF                              00000000
+T1OSCEN                           00000003
+TEMP_ADH                          00000024
+TEMP_ADL                          00000025
+TMR0                              00000001
+TMR0IE                            00000005
+TMR0IF                            00000002
+TMR1                              0000000E
+TMR1CS                            00000001
+TMR1GE                            00000006
+TMR1H                             0000000F
+TMR1IE                            00000000
+TMR1IF                            00000000
+TMR1L                             0000000E
+MPASM  5.51                        TENSAO.ASM   10-18-2017  9:40:40         PAGE 17
+
+
+SYMBOL TABLE
+  LABEL                             VALUE 
+
+TMR1ON                            00000000
+TRISIO                            00000085
+TRISIO0                           00000000
+TRISIO1                           00000001
+TRISIO2                           00000002
+TRISIO3                           00000003
+TRISIO4                           00000004
+TRISIO5                           00000005
+VCFG                              00000006
+VR0                               00000000
+VR1                               00000001
+VR2                               00000002
+VR3                               00000003
+VRCON                             00000099
+VREN                              00000007
+VRR                               00000005
+W                                 00000000
+WPU                               00000095
+WPU0                              00000000
+WPU1                              00000001
+WPU2                              00000002
+WPU4                              00000004
+WPU5                              00000005
+WR                                00000001
+WRD                               00000022
+WREN                              00000002
+WRERR                             00000003
+W_100US                           00000088
+W_15MS                            00000097
+W_1800US                          0000008B
+W_1800USCHECK                     0000008D
+W_40CHECK                         00000084
+W_40US                            00000082
+W_4MS                             00000091
+W_4MSCHECK                        00000093
+W_TEMP                            00000020
+Z                                 00000002
+_BODEN_OFF                        00003FBF
+_BODEN_ON                         00003FFF
+_BOREN_OFF                        00003FBF
+_BOREN_ON                         00003FFF
+_CONFIG                           00002007
+_CPD_OFF                          00003FFF
+_CPD_ON                           00003EFF
+_CP_OFF                           00003FFF
+_CP_ON                            00003F7F
+_DEVID1                           00002006
+_EC_OSC                           00003FFB
+_EXTRC_OSC_CLKOUT                 00003FFF
+_EXTRC_OSC_NOCLKOUT               00003FFE
+_FOSC_EC                          00003FFB
+_FOSC_EXTRCCLK                    00003FFF
+_FOSC_EXTRCIO                     00003FFE
+MPASM  5.51                        TENSAO.ASM   10-18-2017  9:40:40         PAGE 18
+
+
+SYMBOL TABLE
+  LABEL                             VALUE 
+
+_FOSC_HS                          00003FFA
+_FOSC_INTRCCLK                    00003FFD
+_FOSC_INTRCIO                     00003FFC
+_FOSC_LP                          00003FF8
+_FOSC_XT                          00003FF9
+_HS_OSC                           00003FFA
+_IDLOC0                           00002000
+_IDLOC1                           00002001
+_IDLOC2                           00002002
+_IDLOC3                           00002003
+_INTRC_OSC_CLKOUT                 00003FFD
+_INTRC_OSC_NOCLKOUT               00003FFC
+_LP_OSC                           00003FF8
+_MCLRE_OFF                        00003FDF
+_MCLRE_ON                         00003FFF
+_PWRTE_OFF                        00003FFF
+_PWRTE_ON                         00003FEF
+_WDTE_OFF                         00003FF7
+_WDTE_ON                          00003FFF
+_WDT_OFF                          00003FF7
+_WDT_ON                           00003FFF
+_XT_OSC                           00003FF9
+__12F675                          00000001
+__DEBUG                           1
+
+Errors   :     0
+Warnings :     0 reported,     0 suppressed
+Messages :    23 reported,     0 suppressed
+
+

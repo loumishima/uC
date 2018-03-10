@@ -1,0 +1,5 @@
+Error[150]   C:\USERS\LUIZH\DOCUMENTS\UC\SEMAFORO.ASM 28 : Labels must be defined in a code or data section when making an object file
+Message[302] C:\USERS\LUIZH\DOCUMENTS\UC\SEMAFORO.ASM 147 : Register in operand not in bank 0.  Ensure that bank bits are correct.
+Message[302] C:\USERS\LUIZH\DOCUMENTS\UC\SEMAFORO.ASM 205 : Register in operand not in bank 0.  Ensure that bank bits are correct.
+Message[302] C:\USERS\LUIZH\DOCUMENTS\UC\SEMAFORO.ASM 206 : Register in operand not in bank 0.  Ensure that bank bits are correct.
+Message[302] C:\USERS\LUIZH\DOCUMENTS\UC\SEMAFORO.ASM 208 : Register in operand not in bank 0.  Ensure that bank bits are correct.

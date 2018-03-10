@@ -1,0 +1,521 @@
+MPASM  5.51                DELAY_11228377.ASM   8-3-2017  9:39:11         PAGE  1
+
+
+LOC  OBJECT CODE     LINE SOURCE TEXT
+  VALUE
+
+                      00001 ;* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+                      00002 ;*              MODIFICAÇÕES PARA USO COM 12F675                   *
+                      00003 ;*                FEITAS PELO PROF. MARDSON                        *
+                      00004 ;*                    FEVEREIRO DE 2016                            *
+                      00005 ;* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+                      00006 
+                      00007 
+                      00008 ;* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+                      00009 ;*                                      ATIVIDADE 1 - PARTE 2                                           
+                               *
+                      00010 ;*                                      LUIZ HENRIQUE RODRIGUES                                         
+                               *
+                      00011 ;*                                      DELAY SEM USAR TIMER                                            
+                               *
+                      00012 ;*                              OBJETIVO: 31,125 MILISEGUNDOS                                      *
+                      00013 ;*              USANDO 2 LOOPS É POSSIVEL CONTAR ATÉ ESSE VALOR            *
+                      00014 ;*                              VALOR PRÁTICO X = 140 & Y = 85                                     *
+                      00015 ;*                              VALORES SIMULADOS X = 138 & Y = 74                                 *
+                      00016 ;* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+                      00017 
+                      00018 
+                      00019 ;* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+                      00020 ;*                       NOME DO PROJETO                           *
+                      00021 ;*                           CLIENTE                               *
+                      00022 ;*         DESENVOLVIDO PELA MOSAICO ENGENHARIA E CONSULTORIA      *
+                      00023 ;*   VERSÃO: 1.0                           DATA: 17/06/03          *
+                      00024 ;* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+                      00025 ;*                     DESCRIÇÃO DO ARQUIVO                        *
+                      00026 ;*-----------------------------------------------------------------*
+                      00027 ;*   MODELO PARA O PIC 12F675                                      *
+                      00028 ;*                                                                 *
+                      00029 ;*                                                                 *
+                      00030 ;* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+                      00031 
+                      00032 ;* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+                      00033 ;*                     ARQUIVOS DE DEFINIÇÕES                      *
+                      00034 ;* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+                      00035 #INCLUDE <P12F675.INC>  ;ARQUIVO PADRÃO MICROCHIP PARA 12F675
+                      00001         LIST
+                      00002 
+                      00003 ;==========================================================================
+                      00004 ;  MPASM PIC12F675 processor include
+                      00005 ; 
+                      00006 ;  (c) Copyright 1999-2013 Microchip Technology, All rights reserved
+                      00007 ;==========================================================================
+                      00008 
+                      00366         LIST
+                      00036 
+2007   3FA4           00037         __CONFIG _BODEN_OFF & _CP_OFF & _PWRTE_ON & _WDT_OFF & _MCLRE_ON & _INTRC_OSC_NOCLKOUT
+                      00038 
+                      00039 ;* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+                      00040 ;*                    PAGINAÇÃO DE MEMÓRIA                         *
+                      00041 ;* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+MPASM  5.51                DELAY_11228377.ASM   8-3-2017  9:39:11         PAGE  2
+
+
+LOC  OBJECT CODE     LINE SOURCE TEXT
+  VALUE
+
+                      00042 ;DEFINIÇÃO DE COMANDOS DE USUÁRIO PARA ALTERAÇÃO DA PÁGINA DE MEMÓRIA
+                      00043 #DEFINE BANK0   BCF STATUS,RP0  ;SETA BANK 0 DE MEMÓRIA
+                      00044 #DEFINE BANK1   BSF STATUS,RP0  ;SETA BANK 1 DE MAMÓRIA
+                      00045 
+                      00046 ;* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+                      00047 ;*                         VARIÁVEIS                               *
+                      00048 ;* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+                      00049 ; DEFINIÇÃO DOS NOMES E ENDEREÇOS DE TODAS AS VARIÁVEIS UTILIZADAS 
+                      00050 ; PELO SISTEMA
+                      00051 
+                      00052         CBLOCK  0x20    ;ENDEREÇO INICIAL DA MEMÓRIA DE
+                      00053                                         ;USUÁRIO
+  00000020            00054                 W_TEMP          ;REGISTRADORES TEMPORÁRIOS PARA USO
+  00000021            00055                 STATUS_TEMP     ;JUNTO ÀS INTERRUPÇÕES
+                      00056 
+                      00057                 ;NOVAS VARIÁVEIS
+  00000022            00058                 X                       ;VARIÁVEL DE DELAY INTERNO
+  00000023            00059                 Y                       ;VARIÁVEL DE DELAY EXTERNO
+                      00060 
+                      00061         ENDC                    ;FIM DO BLOCO DE MEMÓRIA
+                      00062 ;* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+                      00063 ;*                        FLAGS INTERNOS                           *
+                      00064 ;* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+                      00065 ; DEFINIÇÃO DE TODOS OS FLAGS UTILIZADOS PELO SISTEMA
+                      00066 
+                      00067 ;* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+                      00068 ;*                         CONSTANTES                              *
+                      00069 ;* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+                      00070 ; DEFINIÇÃO DE TODAS AS CONSTANTES UTILIZADAS PELO SISTEMA
+                      00071 
+                      00072 ;* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+                      00073 ;*                           ENTRADAS                              *
+                      00074 ;* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+                      00075 ; DEFINIÇÃO DE TODOS OS PINOS QUE SERÃO UTILIZADOS COMO ENTRADA
+                      00076 ; RECOMENDAMOS TAMBÉM COMENTAR O SIGNIFICADO DE SEUS ESTADOS (0 E 1)
+                      00077 
+                      00078 ;* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+                      00079 ;*                           SAÍDAS                                *
+                      00080 ;* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+                      00081 ; DEFINIÇÃO DE TODOS OS PINOS QUE SERÃO UTILIZADOS COMO SAÍDA
+                      00082 ; RECOMENDAMOS TAMBÉM COMENTAR O SIGNIFICADO DE SEUS ESTADOS (0 E 1)
+                      00083 
+                      00084 #DEFINE                 SAIDA           GPIO,5          ;LED ACIONADO APÓS O DELAY
+                      00085                                                                                 ;0 DESLIGADO
+                      00086                                                                                 ;1 LIGADO
+                      00087 
+                      00088 ;* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+                      00089 ;*                       VETOR DE RESET                            *
+                      00090 ;* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+                      00091 
+0000                  00092         ORG     0x00                    ;ENDEREÇO INICIAL DE PROCESSAMENTO
+0000   2810           00093         GOTO    INICIO
+                      00094         
+MPASM  5.51                DELAY_11228377.ASM   8-3-2017  9:39:11         PAGE  3
+
+
+LOC  OBJECT CODE     LINE SOURCE TEXT
+  VALUE
+
+                      00095 ;* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+                      00096 ;*                    INÍCIO DA INTERRUPÇÃO                        *
+                      00097 ;* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+                      00098 ; ENDEREÇO DE DESVIO DAS INTERRUPÇÕES. A PRIMEIRA TAREFA É SALVAR OS
+                      00099 ; VALORES DE "W" E "STATUS" PARA RECUPERAÇÃO FUTURA
+                      00100 
+0004                  00101         ORG     0x04                    ;ENDEREÇO INICIAL DA INTERRUPÇÃO
+0004   00A0           00102         MOVWF   W_TEMP          ;COPIA W PARA W_TEMP
+0005   0E03           00103         SWAPF   STATUS,W
+0006   00A1           00104         MOVWF   STATUS_TEMP     ;COPIA STATUS PARA STATUS_TEMP
+                      00105 
+                      00106 ;* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+                      00107 ;*                    ROTINA DE INTERRUPÇÃO                        *
+                      00108 ;* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+                      00109 ; AQUI SERÁ ESCRITA AS ROTINAS DE RECONHECIMENTO E TRATAMENTO DAS
+                      00110 ; INTERRUPÇÕES
+                      00111 
+                      00112 ;* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+                      00113 ;*                 ROTINA DE SAÍDA DA INTERRUPÇÃO                  *
+                      00114 ;* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+                      00115 ; OS VALORES DE "W" E "STATUS" DEVEM SER RECUPERADOS ANTES DE 
+                      00116 ; RETORNAR DA INTERRUPÇÃO
+                      00117 
+0007                  00118 SAI_INT
+0007   0E21           00119         SWAPF   STATUS_TEMP,W
+0008   0083           00120         MOVWF   STATUS          ;MOVE STATUS_TEMP PARA STATUS
+0009   0EA0           00121         SWAPF   W_TEMP,F
+000A   0E20           00122         SWAPF   W_TEMP,W        ;MOVE W_TEMP PARA W
+000B   0009           00123         RETFIE
+                      00124 
+                      00125 ;* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+                      00126 ;*                       ROTINAS E SUBROTINAS                      *
+                      00127 ;* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+                      00128 ; CADA ROTINA OU SUBROTINA DEVE POSSUIR A DESCRIÇÃO DE FUNCIONAMENTO
+                      00129 ; E UM NOME COERENTE ÀS SUAS FUNÇÕES.
+                      00130 
+000C                  00131 SUBROTINA1
+                      00132 
+                      00133         ;CORPO DA ROTINA
+                      00134 
+000C   0008           00135         RETURN
+                      00136 
+000D                  00137 DEC_X
+000D   0BA2           00138         DECFSZ X, 1             ;DECREMENTA E SALVA NO REGISTRADOR, SE ZERO PULA O GOTO (FIM LOOP)
+000E   280D           00139         GOTO DEC_X                      ;LOOP
+                      00140 
+000F   0008           00141         RETURN                          ;FIM SUBPROGRAMA
+                      00142 
+                      00143 ;* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+                      00144 ;*                     INICIO DO PROGRAMA                          *
+                      00145 ;* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+                      00146         
+0010                  00147 INICIO
+MPASM  5.51                DELAY_11228377.ASM   8-3-2017  9:39:11         PAGE  4
+
+
+LOC  OBJECT CODE     LINE SOURCE TEXT
+  VALUE
+
+0010   1683           00148         BANK1                           ;ALTERA PARA O BANCO 1
+0011   3000           00149         MOVLW   B'00000000' ;CONFIGURA TODAS AS PORTAS DO GPIO (PINOS)
+Message[302]: Register in operand not in bank 0.  Ensure that bank bits are correct.
+0012   0085           00150         MOVWF   TRISIO          ;COMO SAÍDAS
+Message[302]: Register in operand not in bank 0.  Ensure that bank bits are correct.
+0013   019F           00151         CLRF    ANSEL           ;DEFINE PORTAS COMO Digital I/O
+0014   3004           00152         MOVLW   B'00000100'
+Message[302]: Register in operand not in bank 0.  Ensure that bank bits are correct.
+0015   0081           00153         MOVWF   OPTION_REG      ;DEFINE OPÇÕES DE OPERAÇÃO
+0016   3000           00154         MOVLW   B'00000000'
+0017   008B           00155         MOVWF   INTCON          ;DEFINE OPÇÕES DE INTERRUPÇÕES
+0018   1283           00156         BANK0                           ;RETORNA PARA O BANCO
+0019   3007           00157         MOVLW   B'00000111'
+001A   0099           00158         MOVWF   CMCON           ;DEFINE O MODO DE OPERAÇÃO DO COMPARADOR ANALÓGICO
+                      00159         
+001B   0185           00160         CLRF    GPIO            ;EXTRA! RESETANDO AS PORTAS!
+                      00161 ;* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+                      00162 ;*                     INICIALIZAÇÃO DAS VARIÁVEIS                 *
+                      00163 ;* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+                      00164 
+                      00165 ;* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+                      00166 ;*                     ROTINA PRINCIPAL                            *
+                      00167 ;* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+001C                  00168 MAIN
+                      00169 
+001C   3055           00170         MOVLW .85               ;MOVENDO O VALOR PARA A VARIAVEL Y (VALOR TESTADO NO GRAVADOR DE LED VER
+                            DE!)
+001D   00A3           00171         MOVWF Y
+                      00172         ;BCF SAIDA              ;DESLIGA O LED (UTILIZADO PARA PULSO) [DESCONTINUADO / OSCILOSCOPIO / TA
+                            XA AMOSTRAGEM]  
+                      00173 
+001E                  00174 DEC_Y
+001E   308C           00175         MOVLW .140              ;MOVENDO O VALOR PARA A VARIAVEL X (VALOR TESTADO NO GRAVADOR DE LED VER
+                            DE!)
+001F   00A2           00176         MOVWF X
+                      00177 
+0020   200D           00178         CALL DEC_X              ;CHAMA A SUBFUNCAO 
+0021   0BA3           00179         DECFSZ Y,1              ;DECREMENTA A VARIÁVEL Y, SE ZERO PULA O GOTO (FIM LOOP)
+0022   281E           00180         GOTO DEC_Y              ;LOOP 
+                      00181         
+                      00182         ;BSF SAIDA              ;LIGA O LED APÓS O DELAY [DESCONTINUADO / OSCILOSCÓPIO / TAXA DE AMOSTRA
+                            GEM]
+0023   1A85           00183         BTFSC SAIDA             ;TESTA SE A SAIDA ESTÁ DESLIGADA, SE SIM PULA O SQUARE_OFF
+0024   2827           00184         GOTO S_OFF              ;FUNCAO QUE DESLIGA O LED
+0025   1685           00185         BSF     SAIDA           ;ACENDE O LED 
+                      00186 
+0026   281C           00187         GOTO MAIN               ;REINICIA A CONTAGEM DO DELAY
+                      00188 
+0027                  00189 S_OFF
+0027   1285           00190         BCF SAIDA               ;RESETA BIT GP5
+0028   281C           00191         GOTO MAIN               ;REINICIA A CONTAGEM DO DELAY
+                      00192 
+                      00193 ;* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+MPASM  5.51                DELAY_11228377.ASM   8-3-2017  9:39:11         PAGE  5
+
+
+LOC  OBJECT CODE     LINE SOURCE TEXT
+  VALUE
+
+                      00194 ;*                       TENTATIVAS ANTERIORES                     *
+                      00195 ;* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+                      00196 
+                      00197 
+                      00198         ;BCF SAIDA -------> INICIO DO MAIN (DESLIGA)
+                      00199         ;... CODIGO ... 
+                      00200         ;BSF SAIDA --------> FIM DO MAIN (LIGA)
+                      00201 
+                      00202 ;* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * 
+                      00203 ;               AO REALIZAR TESTES NOTOU-SE QUE O OSCILOSCÓPIO CORTAVA ALGUNS PULSOS *
+                      00204 ;               TAXA DE AMOSTRAGEM (40 ms/div) & PULSO (3 microssegundos)                *
+                      00205 ;               FUNCIONANDO NO STOPWATCH E NO SIMULATOR LOGIC ANALYZER                           *
+                      00206 ;               PULSO MUITO RÁPIDO NO DSO-2150                                                          
+                                             *
+                      00207 ;* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+                      00208 
+                      00209 ;                                       * * * * * * * * * * * * * * * * * * * * * * * * * 
+                      00210         ;BTFSC  SAIDA   * FUNÇÃO ANTERIOR (ONDA QUADRADA)                               * 
+                      00211         ;BCF    SAIDA   * CAUSA BUG CASO SAIDA ESTEJA EM 1                              *               
+                                                    
+                      00212         ;BTFSS  SAIDA   * MUDA MESMO TENDO RECÉM MUDADO ANTERIORMENTE   *
+                      00213         ;BSF    SAIDA   * * * * * * * * * * * * * * * * * * * * * * * * * 
+                      00214 
+                      00215 ;* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+                      00216 ;*                       FIM DO PROGRAMA                           *
+                      00217 ;* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+                      00218 
+                      00219         END
+MPASM  5.51                DELAY_11228377.ASM   8-3-2017  9:39:11         PAGE  6
+
+
+SYMBOL TABLE
+  LABEL                             VALUE 
+
+ADCON0                            0000001F
+ADCS0                             00000004
+ADCS1                             00000005
+ADCS2                             00000006
+ADFM                              00000007
+ADIE                              00000006
+ADIF                              00000006
+ADON                              00000000
+ADRESH                            0000001E
+ADRESL                            0000009E
+ANS0                              00000000
+ANS1                              00000001
+ANS2                              00000002
+ANS3                              00000003
+ANSEL                             0000009F
+BANK0                             BCF STATUS,RP0
+BANK1                             BSF STATUS,RP0
+C                                 00000000
+CAL0                              00000002
+CAL1                              00000003
+CAL2                              00000004
+CAL3                              00000005
+CAL4                              00000006
+CAL5                              00000007
+CHS0                              00000002
+CHS1                              00000003
+CINV                              00000004
+CIS                               00000003
+CM0                               00000000
+CM1                               00000001
+CM2                               00000002
+CMCON                             00000019
+CMIE                              00000003
+CMIF                              00000003
+COUT                              00000006
+DC                                00000001
+DEC_X                             0000000D
+DEC_Y                             0000001E
+EEADR                             0000009B
+EECON1                            0000009C
+EECON2                            0000009D
+EEDAT                             0000009A
+EEDATA                            0000009A
+EEIE                              00000007
+EEIF                              00000007
+F                                 00000001
+FSR                               00000004
+GIE                               00000007
+GO                                00000001
+GO_DONE                           00000001
+GO_NOT_DONE                       00000001
+GP0                               00000000
+GP1                               00000001
+MPASM  5.51                DELAY_11228377.ASM   8-3-2017  9:39:11         PAGE  7
+
+
+SYMBOL TABLE
+  LABEL                             VALUE 
+
+GP2                               00000002
+GP3                               00000003
+GP4                               00000004
+GP5                               00000005
+GPIE                              00000003
+GPIF                              00000000
+GPIO                              00000005
+GPIO0                             00000000
+GPIO1                             00000001
+GPIO2                             00000002
+GPIO3                             00000003
+GPIO4                             00000004
+GPIO5                             00000005
+INDF                              00000000
+INICIO                            00000010
+INTCON                            0000000B
+INTE                              00000004
+INTEDG                            00000006
+INTF                              00000001
+IOC                               00000096
+IOC0                              00000000
+IOC1                              00000001
+IOC2                              00000002
+IOC3                              00000003
+IOC4                              00000004
+IOC5                              00000005
+IOCB                              00000096
+IOCB0                             00000000
+IOCB1                             00000001
+IOCB2                             00000002
+IOCB3                             00000003
+IOCB4                             00000004
+IOCB5                             00000005
+IRP                               00000007
+MAIN                              0000001C
+NOT_BOD                           00000000
+NOT_BOR                           00000000
+NOT_DONE                          00000001
+NOT_GPPU                          00000007
+NOT_PD                            00000003
+NOT_POR                           00000001
+NOT_T1SYNC                        00000002
+NOT_TO                            00000004
+OPTION_REG                        00000081
+OSCCAL                            00000090
+PCL                               00000002
+PCLATH                            0000000A
+PCON                              0000008E
+PEIE                              00000006
+PIE1                              0000008C
+PIR1                              0000000C
+PS0                               00000000
+PS1                               00000001
+MPASM  5.51                DELAY_11228377.ASM   8-3-2017  9:39:11         PAGE  8
+
+
+SYMBOL TABLE
+  LABEL                             VALUE 
+
+PS2                               00000002
+PSA                               00000003
+RD                                00000000
+RP0                               00000005
+RP1                               00000006
+SAIDA                             GPIO,5
+SAI_INT                           00000007
+STATUS                            00000003
+STATUS_TEMP                       00000021
+SUBROTINA1                        0000000C
+S_OFF                             00000027
+T0CS                              00000005
+T0IE                              00000005
+T0IF                              00000002
+T0SE                              00000004
+T1CKPS0                           00000004
+T1CKPS1                           00000005
+T1CON                             00000010
+T1IE                              00000000
+T1IF                              00000000
+T1OSCEN                           00000003
+TMR0                              00000001
+TMR0IE                            00000005
+TMR0IF                            00000002
+TMR1                              0000000E
+TMR1CS                            00000001
+TMR1GE                            00000006
+TMR1H                             0000000F
+TMR1IE                            00000000
+TMR1IF                            00000000
+TMR1L                             0000000E
+TMR1ON                            00000000
+TRISIO                            00000085
+TRISIO0                           00000000
+TRISIO1                           00000001
+TRISIO2                           00000002
+TRISIO3                           00000003
+TRISIO4                           00000004
+TRISIO5                           00000005
+VCFG                              00000006
+VR0                               00000000
+VR1                               00000001
+VR2                               00000002
+VR3                               00000003
+VRCON                             00000099
+VREN                              00000007
+VRR                               00000005
+W                                 00000000
+WPU                               00000095
+WPU0                              00000000
+WPU1                              00000001
+WPU2                              00000002
+WPU4                              00000004
+MPASM  5.51                DELAY_11228377.ASM   8-3-2017  9:39:11         PAGE  9
+
+
+SYMBOL TABLE
+  LABEL                             VALUE 
+
+WPU5                              00000005
+WR                                00000001
+WREN                              00000002
+WRERR                             00000003
+W_TEMP                            00000020
+X                                 00000022
+Y                                 00000023
+Z                                 00000002
+_BODEN_OFF                        00003FBF
+_BODEN_ON                         00003FFF
+_BOREN_OFF                        00003FBF
+_BOREN_ON                         00003FFF
+_CONFIG                           00002007
+_CPD_OFF                          00003FFF
+_CPD_ON                           00003EFF
+_CP_OFF                           00003FFF
+_CP_ON                            00003F7F
+_DEVID1                           00002006
+_EC_OSC                           00003FFB
+_EXTRC_OSC_CLKOUT                 00003FFF
+_EXTRC_OSC_NOCLKOUT               00003FFE
+_FOSC_EC                          00003FFB
+_FOSC_EXTRCCLK                    00003FFF
+_FOSC_EXTRCIO                     00003FFE
+_FOSC_HS                          00003FFA
+_FOSC_INTRCCLK                    00003FFD
+_FOSC_INTRCIO                     00003FFC
+_FOSC_LP                          00003FF8
+_FOSC_XT                          00003FF9
+_HS_OSC                           00003FFA
+_IDLOC0                           00002000
+_IDLOC1                           00002001
+_IDLOC2                           00002002
+_IDLOC3                           00002003
+_INTRC_OSC_CLKOUT                 00003FFD
+_INTRC_OSC_NOCLKOUT               00003FFC
+_LP_OSC                           00003FF8
+_MCLRE_OFF                        00003FDF
+_MCLRE_ON                         00003FFF
+_PWRTE_OFF                        00003FFF
+_PWRTE_ON                         00003FEF
+_WDTE_OFF                         00003FF7
+_WDTE_ON                          00003FFF
+_WDT_OFF                          00003FF7
+_WDT_ON                           00003FFF
+_XT_OSC                           00003FF9
+__12F675                          00000001
+__DEBUG                           1
+MPASM  5.51                DELAY_11228377.ASM   8-3-2017  9:39:11         PAGE 10
+
+
+MEMORY USAGE MAP ('X' = Used,  '-' = Unused)
+
+
+0000 : X---XXXXXXXXXXXX XXXXXXXXXXXXXXXX XXXXXXXXX------- ----------------
+2000 : -------X-------- ---------------- ---------------- ----------------
+
+All other memory blocks unused.
+
+Program Memory Words Used:    38
+Program Memory Words Free:   986
+
+
+Errors   :     0
+Warnings :     0 reported,     0 suppressed
+Messages :     3 reported,     0 suppressed
+
+

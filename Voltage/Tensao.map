@@ -1,0 +1,92 @@
+MPLINK 4.49, Linker
+Linker Map File - Created Sat Sep 16 10:02:52 2017
+
+                                 Section Info
+                  Section       Type    Address   Location Size(Bytes)
+                ---------  ---------  ---------  ---------  ---------
+                   .org_0       code   0x000000    program   0x000000
+                   .org_1       code   0x000000    program   0x000002
+                   .org_2       code   0x000004    program   0x0001dc
+    .config_2007_TENSAO.O       code   0x002007    program   0x000002
+
+
+
+                              Program Memory Usage 
+                               Start         End      
+                           ---------   ---------      
+                            0x000000    0x000000      
+                            0x000004    0x0000f1      
+                            0x002007    0x002007      
+            240 out of 1158 program addresses used, program memory utilization is 20%
+
+
+
+                              Symbols - Sorted by Name
+                     Name    Address   Location    Storage File                     
+                ---------  ---------  ---------  --------- ---------                
+                       AD   0x0000b2    program     static C:\Users\LuizH\Documents\uC\Tensao.ASM
+             CHECK_FINAL0   0x000054    program     static C:\Users\LuizH\Documents\uC\Tensao.ASM
+             CHECK_FINAL1   0x00006a    program     static C:\Users\LuizH\Documents\uC\Tensao.ASM
+              COUNT_RESET   0x00000f    program     static C:\Users\LuizH\Documents\uC\Tensao.ASM
+                DEC2ASCII   0x00007a    program     static C:\Users\LuizH\Documents\uC\Tensao.ASM
+                 FINAL_AD   0x0000b3    program     static C:\Users\LuizH\Documents\uC\Tensao.ASM
+               FINAL_LCD0   0x00005a    program     static C:\Users\LuizH\Documents\uC\Tensao.ASM
+               FINAL_LCD1   0x000070    program     static C:\Users\LuizH\Documents\uC\Tensao.ASM
+                   INICIO   0x00009c    program     static C:\Users\LuizH\Documents\uC\Tensao.ASM
+             LIMPA_T0FLAG   0x00000c    program     static C:\Users\LuizH\Documents\uC\Tensao.ASM
+                     MAIN   0x0000ac    program     static C:\Users\LuizH\Documents\uC\Tensao.ASM
+                    MEDIA   0x0000bd    program     static C:\Users\LuizH\Documents\uC\Tensao.ASM
+              ROTATION_10   0x0000dc    program     static C:\Users\LuizH\Documents\uC\Tensao.ASM
+               ROTATION_5   0x0000c6    program     static C:\Users\LuizH\Documents\uC\Tensao.ASM
+                  SAI_INT   0x000007    program     static C:\Users\LuizH\Documents\uC\Tensao.ASM
+                SEND_LCD0   0x00004f    program     static C:\Users\LuizH\Documents\uC\Tensao.ASM
+                SEND_LCD1   0x000065    program     static C:\Users\LuizH\Documents\uC\Tensao.ASM
+                    SETUP   0x000012    program     static C:\Users\LuizH\Documents\uC\Tensao.ASM
+                 SR_CLOCK   0x00004c    program     static C:\Users\LuizH\Documents\uC\Tensao.ASM
+                   SR_SET   0x000057    program     static C:\Users\LuizH\Documents\uC\Tensao.ASM
+                  SR_SET1   0x00006d    program     static C:\Users\LuizH\Documents\uC\Tensao.ASM
+                  W_100US   0x000088    program     static C:\Users\LuizH\Documents\uC\Tensao.ASM
+                   W_15MS   0x000097    program     static C:\Users\LuizH\Documents\uC\Tensao.ASM
+                 W_1800US   0x00008b    program     static C:\Users\LuizH\Documents\uC\Tensao.ASM
+            W_1800USCHECK   0x00008d    program     static C:\Users\LuizH\Documents\uC\Tensao.ASM
+                W_40CHECK   0x000084    program     static C:\Users\LuizH\Documents\uC\Tensao.ASM
+                   W_40US   0x000082    program     static C:\Users\LuizH\Documents\uC\Tensao.ASM
+                    W_4MS   0x000091    program     static C:\Users\LuizH\Documents\uC\Tensao.ASM
+               W_4MSCHECK   0x000093    program     static C:\Users\LuizH\Documents\uC\Tensao.ASM
+
+
+
+                              Symbols - Sorted by Address
+                     Name    Address   Location    Storage File                     
+                ---------  ---------  ---------  --------- ---------                
+                  SAI_INT   0x000007    program     static C:\Users\LuizH\Documents\uC\Tensao.ASM
+             LIMPA_T0FLAG   0x00000c    program     static C:\Users\LuizH\Documents\uC\Tensao.ASM
+              COUNT_RESET   0x00000f    program     static C:\Users\LuizH\Documents\uC\Tensao.ASM
+                    SETUP   0x000012    program     static C:\Users\LuizH\Documents\uC\Tensao.ASM
+                 SR_CLOCK   0x00004c    program     static C:\Users\LuizH\Documents\uC\Tensao.ASM
+                SEND_LCD0   0x00004f    program     static C:\Users\LuizH\Documents\uC\Tensao.ASM
+             CHECK_FINAL0   0x000054    program     static C:\Users\LuizH\Documents\uC\Tensao.ASM
+                   SR_SET   0x000057    program     static C:\Users\LuizH\Documents\uC\Tensao.ASM
+               FINAL_LCD0   0x00005a    program     static C:\Users\LuizH\Documents\uC\Tensao.ASM
+                SEND_LCD1   0x000065    program     static C:\Users\LuizH\Documents\uC\Tensao.ASM
+             CHECK_FINAL1   0x00006a    program     static C:\Users\LuizH\Documents\uC\Tensao.ASM
+                  SR_SET1   0x00006d    program     static C:\Users\LuizH\Documents\uC\Tensao.ASM
+               FINAL_LCD1   0x000070    program     static C:\Users\LuizH\Documents\uC\Tensao.ASM
+                DEC2ASCII   0x00007a    program     static C:\Users\LuizH\Documents\uC\Tensao.ASM
+                   W_40US   0x000082    program     static C:\Users\LuizH\Documents\uC\Tensao.ASM
+                W_40CHECK   0x000084    program     static C:\Users\LuizH\Documents\uC\Tensao.ASM
+                  W_100US   0x000088    program     static C:\Users\LuizH\Documents\uC\Tensao.ASM
+                 W_1800US   0x00008b    program     static C:\Users\LuizH\Documents\uC\Tensao.ASM
+            W_1800USCHECK   0x00008d    program     static C:\Users\LuizH\Documents\uC\Tensao.ASM
+                    W_4MS   0x000091    program     static C:\Users\LuizH\Documents\uC\Tensao.ASM
+               W_4MSCHECK   0x000093    program     static C:\Users\LuizH\Documents\uC\Tensao.ASM
+                   W_15MS   0x000097    program     static C:\Users\LuizH\Documents\uC\Tensao.ASM
+                   INICIO   0x00009c    program     static C:\Users\LuizH\Documents\uC\Tensao.ASM
+                     MAIN   0x0000ac    program     static C:\Users\LuizH\Documents\uC\Tensao.ASM
+                       AD   0x0000b2    program     static C:\Users\LuizH\Documents\uC\Tensao.ASM
+                 FINAL_AD   0x0000b3    program     static C:\Users\LuizH\Documents\uC\Tensao.ASM
+                    MEDIA   0x0000bd    program     static C:\Users\LuizH\Documents\uC\Tensao.ASM
+               ROTATION_5   0x0000c6    program     static C:\Users\LuizH\Documents\uC\Tensao.ASM
+              ROTATION_10   0x0000dc    program     static C:\Users\LuizH\Documents\uC\Tensao.ASM
+
+

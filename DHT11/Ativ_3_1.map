@@ -1,0 +1,102 @@
+MPLINK 4.49, Linker
+Linker Map File - Created Wed Oct 18 14:49:42 2017
+
+                                 Section Info
+                  Section       Type    Address   Location Size(Bytes)
+                ---------  ---------  ---------  ---------  ---------
+                   .org_0       code   0x000000    program   0x000000
+                   .org_1       code   0x000000    program   0x000002
+                   .org_2       code   0x000004    program   0x00023e
+  .config_2007_ATIV_3_1.O       code   0x002007    program   0x000002
+
+
+
+                              Program Memory Usage 
+                               Start         End      
+                           ---------   ---------      
+                            0x000000    0x000000      
+                            0x000004    0x000122      
+                            0x002007    0x002007      
+            289 out of 1158 program addresses used, program memory utilization is 24%
+
+
+
+                              Symbols - Sorted by Name
+                     Name    Address   Location    Storage File                     
+                ---------  ---------  ---------  --------- ---------                
+             CHECK_FINAL0   0x000055    program     static C:\Users\LuizH\Documents\uC\Ativ_3_1.ASM
+             CHECK_FINAL1   0x00006b    program     static C:\Users\LuizH\Documents\uC\Ativ_3_1.ASM
+            CONTAGEM_BITS   0x00010f    program     static C:\Users\LuizH\Documents\uC\Ativ_3_1.ASM
+              COUNT_RESET   0x000010    program     static C:\Users\LuizH\Documents\uC\Ativ_3_1.ASM
+                    DHT11   0x00007b    program     static C:\Users\LuizH\Documents\uC\Ativ_3_1.ASM
+               FINAL_LCD0   0x00005b    program     static C:\Users\LuizH\Documents\uC\Ativ_3_1.ASM
+               FINAL_LCD1   0x000071    program     static C:\Users\LuizH\Documents\uC\Ativ_3_1.ASM
+                   INICIO   0x0000ee    program     static C:\Users\LuizH\Documents\uC\Ativ_3_1.ASM
+             LIMPA_T0FLAG   0x00000d    program     static C:\Users\LuizH\Documents\uC\Ativ_3_1.ASM
+                     MAIN   0x0000fa    program     static C:\Users\LuizH\Documents\uC\Ativ_3_1.ASM
+             PRINT_RESULT   0x0000cc    program     static C:\Users\LuizH\Documents\uC\Ativ_3_1.ASM
+                  SAI_INT   0x000007    program     static C:\Users\LuizH\Documents\uC\Ativ_3_1.ASM
+                SEND_LCD0   0x000050    program     static C:\Users\LuizH\Documents\uC\Ativ_3_1.ASM
+                SEND_LCD1   0x000066    program     static C:\Users\LuizH\Documents\uC\Ativ_3_1.ASM
+                    SETUP   0x000013    program     static C:\Users\LuizH\Documents\uC\Ativ_3_1.ASM
+                 SR_CLOCK   0x00004d    program     static C:\Users\LuizH\Documents\uC\Ativ_3_1.ASM
+                   SR_SET   0x000058    program     static C:\Users\LuizH\Documents\uC\Ativ_3_1.ASM
+                  SR_SET1   0x00006e    program     static C:\Users\LuizH\Documents\uC\Ativ_3_1.ASM
+               SUBROTINA1   0x00000c    program     static C:\Users\LuizH\Documents\uC\Ativ_3_1.ASM
+              SUBTRACT_PT   0x0000ca    program     static C:\Users\LuizH\Documents\uC\Ativ_3_1.ASM
+              SUBTRACT_PU   0x0000c8    program     static C:\Users\LuizH\Documents\uC\Ativ_3_1.ASM
+               SUBTRACT_T   0x00009e    program     static C:\Users\LuizH\Documents\uC\Ativ_3_1.ASM
+               SUBTRACT_U   0x0000b7    program     static C:\Users\LuizH\Documents\uC\Ativ_3_1.ASM
+            TEST_RESPONSE   0x000108    program     static C:\Users\LuizH\Documents\uC\Ativ_3_1.ASM
+          TRANSFORM_ASCII   0x000081    program     static C:\Users\LuizH\Documents\uC\Ativ_3_1.ASM
+                WAIT_TMR0   0x000115    program     static C:\Users\LuizH\Documents\uC\Ativ_3_1.ASM
+                  W_100US   0x0000da    program     static C:\Users\LuizH\Documents\uC\Ativ_3_1.ASM
+                   W_15MS   0x0000e9    program     static C:\Users\LuizH\Documents\uC\Ativ_3_1.ASM
+                 W_1800US   0x0000dd    program     static C:\Users\LuizH\Documents\uC\Ativ_3_1.ASM
+            W_1800USCHECK   0x0000df    program     static C:\Users\LuizH\Documents\uC\Ativ_3_1.ASM
+                W_40CHECK   0x0000d6    program     static C:\Users\LuizH\Documents\uC\Ativ_3_1.ASM
+                   W_40US   0x0000d4    program     static C:\Users\LuizH\Documents\uC\Ativ_3_1.ASM
+                    W_4MS   0x0000e3    program     static C:\Users\LuizH\Documents\uC\Ativ_3_1.ASM
+               W_4MSCHECK   0x0000e5    program     static C:\Users\LuizH\Documents\uC\Ativ_3_1.ASM
+
+
+
+                              Symbols - Sorted by Address
+                     Name    Address   Location    Storage File                     
+                ---------  ---------  ---------  --------- ---------                
+                  SAI_INT   0x000007    program     static C:\Users\LuizH\Documents\uC\Ativ_3_1.ASM
+               SUBROTINA1   0x00000c    program     static C:\Users\LuizH\Documents\uC\Ativ_3_1.ASM
+             LIMPA_T0FLAG   0x00000d    program     static C:\Users\LuizH\Documents\uC\Ativ_3_1.ASM
+              COUNT_RESET   0x000010    program     static C:\Users\LuizH\Documents\uC\Ativ_3_1.ASM
+                    SETUP   0x000013    program     static C:\Users\LuizH\Documents\uC\Ativ_3_1.ASM
+                 SR_CLOCK   0x00004d    program     static C:\Users\LuizH\Documents\uC\Ativ_3_1.ASM
+                SEND_LCD0   0x000050    program     static C:\Users\LuizH\Documents\uC\Ativ_3_1.ASM
+             CHECK_FINAL0   0x000055    program     static C:\Users\LuizH\Documents\uC\Ativ_3_1.ASM
+                   SR_SET   0x000058    program     static C:\Users\LuizH\Documents\uC\Ativ_3_1.ASM
+               FINAL_LCD0   0x00005b    program     static C:\Users\LuizH\Documents\uC\Ativ_3_1.ASM
+                SEND_LCD1   0x000066    program     static C:\Users\LuizH\Documents\uC\Ativ_3_1.ASM
+             CHECK_FINAL1   0x00006b    program     static C:\Users\LuizH\Documents\uC\Ativ_3_1.ASM
+                  SR_SET1   0x00006e    program     static C:\Users\LuizH\Documents\uC\Ativ_3_1.ASM
+               FINAL_LCD1   0x000071    program     static C:\Users\LuizH\Documents\uC\Ativ_3_1.ASM
+                    DHT11   0x00007b    program     static C:\Users\LuizH\Documents\uC\Ativ_3_1.ASM
+          TRANSFORM_ASCII   0x000081    program     static C:\Users\LuizH\Documents\uC\Ativ_3_1.ASM
+               SUBTRACT_T   0x00009e    program     static C:\Users\LuizH\Documents\uC\Ativ_3_1.ASM
+               SUBTRACT_U   0x0000b7    program     static C:\Users\LuizH\Documents\uC\Ativ_3_1.ASM
+              SUBTRACT_PU   0x0000c8    program     static C:\Users\LuizH\Documents\uC\Ativ_3_1.ASM
+              SUBTRACT_PT   0x0000ca    program     static C:\Users\LuizH\Documents\uC\Ativ_3_1.ASM
+             PRINT_RESULT   0x0000cc    program     static C:\Users\LuizH\Documents\uC\Ativ_3_1.ASM
+                   W_40US   0x0000d4    program     static C:\Users\LuizH\Documents\uC\Ativ_3_1.ASM
+                W_40CHECK   0x0000d6    program     static C:\Users\LuizH\Documents\uC\Ativ_3_1.ASM
+                  W_100US   0x0000da    program     static C:\Users\LuizH\Documents\uC\Ativ_3_1.ASM
+                 W_1800US   0x0000dd    program     static C:\Users\LuizH\Documents\uC\Ativ_3_1.ASM
+            W_1800USCHECK   0x0000df    program     static C:\Users\LuizH\Documents\uC\Ativ_3_1.ASM
+                    W_4MS   0x0000e3    program     static C:\Users\LuizH\Documents\uC\Ativ_3_1.ASM
+               W_4MSCHECK   0x0000e5    program     static C:\Users\LuizH\Documents\uC\Ativ_3_1.ASM
+                   W_15MS   0x0000e9    program     static C:\Users\LuizH\Documents\uC\Ativ_3_1.ASM
+                   INICIO   0x0000ee    program     static C:\Users\LuizH\Documents\uC\Ativ_3_1.ASM
+                     MAIN   0x0000fa    program     static C:\Users\LuizH\Documents\uC\Ativ_3_1.ASM
+            TEST_RESPONSE   0x000108    program     static C:\Users\LuizH\Documents\uC\Ativ_3_1.ASM
+            CONTAGEM_BITS   0x00010f    program     static C:\Users\LuizH\Documents\uC\Ativ_3_1.ASM
+                WAIT_TMR0   0x000115    program     static C:\Users\LuizH\Documents\uC\Ativ_3_1.ASM
+
+
